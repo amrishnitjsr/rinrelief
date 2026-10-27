@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 export default function ResetPasswordPage() {
@@ -15,6 +15,8 @@ function ResetForm() {
   const token = searchParams.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,10 +57,10 @@ function ResetForm() {
           <h1 className="serif mt-4 text-center text-3xl font-bold text-navy">Choose a new password</h1>
           <form onSubmit={submit} className="mt-7 space-y-4">
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">New password
-              <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="At least 8 characters" />
+              <span className="relative"><input required minLength={8} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3.5 py-3 pr-11 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="At least 8 characters" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-slate-500" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span>
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Confirm password
-              <input required minLength={8} type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="Repeat your password" />
+              <span className="relative"><input required minLength={8} type={showConfirmation ? "text" : "password"} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3.5 py-3 pr-11 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="Repeat your password" /><button type="button" onClick={() => setShowConfirmation((visible) => !visible)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-slate-500" aria-label={showConfirmation ? "Hide confirmation password" : "Show confirmation password"}>{showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}</button></span>
             </label>
             {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{message} <Link href="/login" className="font-bold underline">Sign in</Link></p>}
             {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}

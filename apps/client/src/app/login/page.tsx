@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 export default function LoginPage() {
@@ -17,6 +17,7 @@ function LoginForm() {
   const [mode, setMode] = useState<"client" | "admin">(requestedRole);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const requestedCallbackUrl = searchParams.get("callbackUrl");
@@ -59,7 +60,12 @@ function LoginForm() {
           </div>
           <form onSubmit={submit} className="mt-7 space-y-4">
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder={mode === "admin" ? "advocate@yourfirm.com" : "you@example.com"} /></label>
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Password<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="At least 8 characters" /></label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Password
+              <span className="relative">
+                <input required minLength={8} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3.5 py-3 pr-11 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="At least 8 characters" />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-slate-500" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+              </span>
+            </label>
             {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Verifying..." : mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
           </form>
