@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { --navy:#0A192F; --gold:#D4AF37; }
+* { box-sizing:border-box; }
+body { margin:0; background:#f5f3ee; color:#201d1a; font-family:var(--font-inter),Arial,sans-serif; }
+.serif { font-family:var(--font-playfair),Georgia,serif; }
+button,input,select,textarea { font:inherit; }
+::selection { background:#d4af37; color:#332b26; }

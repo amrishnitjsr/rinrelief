@@ -1,0 +1,149 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADVOCATE
+  CLIENT
+}
+
+enum LoanType {
+  CREDIT_CARD
+  PERSONAL_LOAN
+  APP_LOAN_INSTANT
+  BUSINESS_LOAN
+  HOME_OR_AUTO_LOAN
+}
+
+enum HarassmentType {
+  ABUSIVE_CALLS
+  HOME_OFFICE_VISITS
+  THREATENING_MESSAGES
+  DEFAMATION_CONTACTS_CALLING
+  MULTIPLE_VIOLATIONS
+  NONE
+}
+
+enum CaseStatus {
+  INQUIRY_RECEIVED
+  CONSULTATION_PAID
+  LEGAL_NOTICE_SENT
+  UNDER_NEGOTIATION
+  SETTLEMENT_REACHED
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum DocumentCategory {
+  HARASSMENT_AUDIO
+  SCREENSHOT_CHAT
+  LEGAL_NOTICE_COPY
+  LOAN_STATEMENT
+  SETTLEMENT_LETTER
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  phone         String
+  role          Role         @default(CLIENT)
+  passwordHash  String?
+  casesAssigned DebtCase[]   @relation("AdvocateCases")
+  createdNotes  CaseNote[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([email])
+}
+
+model DebtCase {
+  id                  String          @id @default(cuid())
+  caseNumber          String?         @unique
+  clientName          String
+  clientEmail         String
+  clientPhone         String
+  city                String
+  bankOrLenderName    String
+  loanType            LoanType
+  totalOutstanding    Float
+  principalAmount     Float?
+  overdueDurationDays Int
+  settlementBudget    Float?
+  facingHarassment    Boolean         @default(false)
+  harassmentType      HarassmentType?
+  harassmentDetails   String?         @db.Text
+  receivedLegalNotice Boolean         @default(false)
+  status              CaseStatus      @default(INQUIRY_RECEIVED)
+  feeAmount           Float           @default(1.0)
+  meetingLink         String?
+  assignedAdvocateId  String?
+  assignedAdvocate    User?           @relation("AdvocateCases", fields: [assignedAdvocateId], references: [id], onDelete: SetNull)
+  evidenceFiles       CaseDocument[]
+  notes               CaseNote[]
+  payment             PaymentTransaction?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([clientPhone])
+  @@index([bankOrLenderName])
+  @@index([status])
+  @@index([assignedAdvocateId, status])
+}
+
+model CaseDocument {
+  id           String           @id @default(cuid())
+  caseId       String
+  debtCase     DebtCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  category     DocumentCategory
+  fileName     String
+  storageKey   String           @unique
+  fileMimeType String
+  fileSize     Int
+  createdAt    DateTime         @default(now())
+
+  @@index([caseId])
+}
+
+model CaseNote {
+  id             String       @id @default(cuid())
+  caseId         String
+  debtCase       DebtCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id])
+  content        String       @db.Text
+  isInternalOnly Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  @@index([caseId])
+  @@index([authorId, createdAt])
+}
+
+model PaymentTransaction {
+  id                String        @id @default(cuid())
+  caseId            String        @unique
+  debtCase          DebtCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  amount            Float
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([razorpayOrderId])
+  @@index([status, createdAt])
+}
