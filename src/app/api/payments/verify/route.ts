@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { verifyRazorpaySignature } from "@/lib/payments";
+import { verifyPaymentAccessToken, verifyRazorpaySignature } from "@/lib/payments";
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  const body = await request.json() as { caseId?: string; razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string };
+  const body = await request.json() as { caseId?: string; razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string; paymentAccessToken?: string };
   if (!body.caseId || !body.razorpayOrderId || !body.razorpayPaymentId || !body.razorpaySignature) return NextResponse.json({ error: "Missing payment fields" }, { status: 400 });
   const debtCase = await prisma.debtCase.findUnique({ where: { id: body.caseId }, include: { payment: true } });
+  const hasPaymentAccessToken = verifyPaymentAccessToken(body.paymentAccessToken ?? null, body.caseId);
   const ownsCase =
     debtCase &&
-    (session.user.role !== "CLIENT" ||
-      debtCase.clientEmail.toLowerCase() === session.user.email?.toLowerCase() ||
-      (!!session.user.phone && debtCase.clientPhone === session.user.phone));
+    (hasPaymentAccessToken ||
+      (!!session?.user &&
+        (session.user.role !== "CLIENT" ||
+          debtCase.clientEmail.toLowerCase() === session.user.email?.toLowerCase() ||
+          (!!session.user.phone && debtCase.clientPhone === session.user.phone))));
   if (!ownsCase) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (debtCase.payment?.razorpayOrderId !== body.razorpayOrderId) return NextResponse.json({ error: "Payment order does not match this case" }, { status: 400 });
   if (!verifyRazorpaySignature(body.razorpayOrderId, body.razorpayPaymentId, body.razorpaySignature)) return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });

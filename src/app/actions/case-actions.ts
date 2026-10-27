@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createCaseSchema } from "@/lib/validation";
 import { notifyAdminOfNewCase } from "@/lib/email";
-import { CURRENT_PAYMENT_AMOUNT } from "@/lib/payments";
+import { createPaymentAccessToken, CURRENT_PAYMENT_AMOUNT } from "@/lib/payments";
 
 function createCaseNumber() {
   const now = new Date();
@@ -40,7 +40,12 @@ export async function createDebtCase(input: unknown) {
     console.error("case notification failed", { caseId: debtCase.id, error });
   }
   revalidatePath("/admin/cases");
-  return { id: debtCase.caseNumber ?? debtCase.id, status: debtCase.status };
+  return {
+    id: debtCase.id,
+    caseNumber: debtCase.caseNumber ?? debtCase.id,
+    paymentAccessToken: createPaymentAccessToken(debtCase.id),
+    status: debtCase.status,
+  };
 }
 
 export async function addCaseNote(input: { caseId: string; content: string; isInternalOnly: boolean }) {

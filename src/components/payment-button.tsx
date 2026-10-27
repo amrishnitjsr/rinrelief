@@ -33,7 +33,7 @@ function loadRazorpay(): Promise<void> {
   });
 }
 
-export function PaymentButton({ caseId, amount }: { caseId: string; amount: number }) {
+export function PaymentButton({ caseId, amount, accessToken, onSuccess }: { caseId: string; amount: number; accessToken?: string; onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,7 +41,10 @@ export function PaymentButton({ caseId, amount }: { caseId: string; amount: numb
     setLoading(true);
     setError("");
     try {
-      const orderResponse = await fetch(`/api/cases/${caseId}/payment`, { method: "POST" });
+      const orderResponse = await fetch(`/api/cases/${caseId}/payment`, {
+        method: "POST",
+        headers: accessToken ? { "x-payment-access-token": accessToken } : undefined,
+      });
       const responseText = await orderResponse.text();
       const order = responseText ? (JSON.parse(responseText) as { orderId?: string; keyId?: string; amount?: number; currency?: string; error?: string }) : {};
       if (!orderResponse.ok || !order.orderId || !order.keyId) throw new Error(order.error ?? "Unable to start payment");
@@ -67,11 +70,13 @@ export function PaymentButton({ caseId, amount }: { caseId: string; amount: numb
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
+                paymentAccessToken: accessToken,
               }),
             });
             const result = (await verifyResponse.json()) as { error?: string };
             if (!verifyResponse.ok) throw new Error(result.error ?? "Payment verification failed");
-            window.location.reload();
+            if (onSuccess) onSuccess();
+            else window.location.reload();
           } catch (verificationError) {
             setError(verificationError instanceof Error ? verificationError.message : "Payment verification failed");
             setLoading(false);
