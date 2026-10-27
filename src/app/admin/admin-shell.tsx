@@ -43,7 +43,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </aside>
       <div className={`transition-all ${collapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur lg:px-8">
-          <div className="flex items-center gap-3"><Menu className="text-slate-500 lg:hidden" /><div><p className="text-xs font-bold uppercase tracking-widest text-red-600">Live operations</p><p className="font-semibold text-navy">Good morning, Anika</p></div></div>
+          <div className="flex items-center gap-3"><Menu className="text-slate-500 lg:hidden" /><div><p className="text-xs font-bold uppercase tracking-widest text-red-600">Live operations</p><p className="font-semibold text-navy">Good morning, Adv. Tisha</p></div></div>
           <div className="flex items-center gap-4"><div className="hidden items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-xs font-bold text-red-700 sm:flex"><span className="h-2 w-2 animate-pulse rounded-full bg-red-600" /> 7 urgent alerts</div><Bell className="text-slate-500" /></div>
         </header>
         <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 lg:px-8"><b>Priority queue:</b> 3 cases have active Section 138 notices requiring review today.</div>
