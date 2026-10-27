@@ -12,3 +12,13 @@ export async function notifyAdminOfNewCase(input: { id: string; clientName: stri
   });
   if (error) throw new Error(`Admin notification failed: ${error.message}`);
 }
+
+export async function sendPasswordResetEmail(input: { email: string; resetUrl: string }) {
+  const { error } = await resend.emails.send({
+    from: "Rinrelife Support <alerts@nyayashield.in>",
+    to: input.email,
+    subject: "Reset your Rinrelife password",
+    text: `Use this link to reset your Rinrelife password: ${input.resetUrl}\n\nThis link expires in 30 minutes. If you did not request this, you can ignore this email.`,
+  });
+  if (error) throw new Error(`Password reset email failed: ${error.message}`);
+}

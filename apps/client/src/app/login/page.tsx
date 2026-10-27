@@ -19,7 +19,13 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const callbackUrl = searchParams.get("callbackUrl") ?? (mode === "admin" ? (process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3003") + "/cases" : "/case-intake");
+  const requestedCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl =
+    requestedCallbackUrl?.startsWith("/") && !requestedCallbackUrl.startsWith("//")
+      ? requestedCallbackUrl
+      : mode === "admin"
+        ? "/admin/cases"
+        : "/case-intake";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +37,7 @@ function LoginForm() {
       setLoading(false);
       return;
     }
-    window.location.assign(result.url ?? callbackUrl);
+    window.location.assign(callbackUrl);
   }
 
   return (

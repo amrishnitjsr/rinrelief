@@ -19,7 +19,13 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const callbackUrl = searchParams.get("callbackUrl") ?? (mode === "admin" ? "/admin/cases" : "/case-intake");
+  const requestedCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl =
+    requestedCallbackUrl?.startsWith("/") && !requestedCallbackUrl.startsWith("//")
+      ? requestedCallbackUrl
+      : mode === "admin"
+        ? "/admin/cases"
+        : "/case-intake";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +37,7 @@ function LoginForm() {
       setLoading(false);
       return;
     }
-    window.location.assign(result.url ?? callbackUrl);
+    window.location.assign(callbackUrl);
   }
 
   return (
@@ -57,6 +63,7 @@ function LoginForm() {
             {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Verifying..." : mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
           </form>
+          {mode === "client" && <Link href="/forgot-password" className="mt-5 block text-center text-sm font-bold text-navy underline">Forgot your password?</Link>}
           {mode === "client" && <p className="mt-6 text-center text-sm text-slate-500">New to Rinrelife? <Link href="/register" className="font-bold text-navy underline">Create a client account</Link></p>}
           {mode === "admin" && <p className="mt-6 text-center text-xs leading-5 text-slate-400">Admin accounts are created by the deployment owner. Do not share advocate credentials.</p>}
         </Card>

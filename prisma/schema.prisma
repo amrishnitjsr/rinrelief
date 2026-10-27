@@ -61,6 +61,8 @@ model User {
   phone         String
   role          Role         @default(CLIENT)
   passwordHash  String?
+  resetTokenHash String?   @unique
+  resetTokenExpiresAt DateTime?
   casesAssigned DebtCase[]   @relation("AdvocateCases")
   createdNotes  CaseNote[]
   createdAt     DateTime     @default(now())

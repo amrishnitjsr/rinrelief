@@ -21,10 +21,10 @@ export function SiteHeader() {
           <Link className="transition hover:text-white" href="/dashboard">Track case</Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/case-intake" className="hidden items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold text-espresso transition hover:bg-[#e9c84f] sm:flex">
-            Contact us <ArrowRight size={15} />
+          <Link href="/#contact" className="hidden items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold text-espresso transition hover:bg-[#e9c84f] sm:flex">
+            Talk to us <ArrowRight size={15} />
           </Link>
-          <Link href="/case-intake" aria-label="Open confidential intake" className="grid h-10 w-10 place-items-center rounded-full text-white sm:hidden">
+          <Link href="/#contact" aria-label="Contact Rinrelife" className="grid h-10 w-10 place-items-center rounded-full text-white sm:hidden">
             <Menu size={21} />
           </Link>
         </div>
