@@ -11,7 +11,7 @@
     "dev:client": "npm --prefix apps/client run dev",
     "dev:admin": "npm --prefix apps/admin run dev",
     "dev:api": "npm --prefix apps/api run dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "build:client": "npm --prefix apps/client run build",
     "build:admin": "npm --prefix apps/admin run build",
     "build:api": "npm --prefix apps/api run build",
