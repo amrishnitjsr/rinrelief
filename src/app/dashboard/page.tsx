@@ -4,6 +4,7 @@ import { Check, Clock3, FileText, ShieldCheck } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge, Button, Card } from "@/components/ui";
+import { SiteHeader } from "@/components/site-header";
 
 const stages = [
   ["INQUIRY_RECEIVED", "Inquiry received"],
@@ -34,11 +35,18 @@ export default async function ClientDashboard() {
       ],
     },
     orderBy: { updatedAt: "desc" },
-    include: { evidenceFiles: { select: { id: true } }, payment: { select: { status: true } } },
+    include: {
+      evidenceFiles: { where: { isClientVisible: true }, select: { id: true, fileName: true, referenceNo: true } },
+      notes: { where: { isInternalOnly: false }, orderBy: { createdAt: "desc" } },
+      payment: { select: { status: true } },
+      invoices: { include: { installments: { orderBy: { dueDate: "asc" } } }, orderBy: { createdAt: "desc" }, take: 1 },
+    },
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-12 lg:px-8">
+    <>
+    <SiteHeader />
+    <main className="mx-auto max-w-6xl px-5 pb-12 pt-32 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase tracking-[.16em] text-[#9b7b18]">Borrower dashboard</p>
@@ -80,6 +88,16 @@ export default async function ClientDashboard() {
                   <Summary icon={<Clock3 size={16} />} label="Last updated" value={item.updatedAt.toLocaleDateString("en-IN")} />
                   <Summary icon={<ShieldCheck size={16} />} label="Consultation" value={item.payment?.status === "CAPTURED" ? "Paid" : "Pending"} />
                 </div>
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  <Summary icon={<ShieldCheck size={16} />} label="Agreed fee" value={`₹${(item.invoices[0]?.totalFee ?? item.feeAmount).toLocaleString("en-IN")}`} />
+                  <Summary icon={<Clock3 size={16} />} label="Paid to date" value={`₹${(item.invoices[0]?.totalPaid ?? 0).toLocaleString("en-IN")}`} />
+                  <Summary icon={<FileText size={16} />} label="Outstanding" value={`₹${Math.max(0, (item.invoices[0]?.totalFee ?? item.feeAmount) - (item.invoices[0]?.totalPaid ?? 0) + (item.invoices[0]?.penaltyAmount ?? 0)).toLocaleString("en-IN")}`} />
+                </div>
+                {(item.invoices[0]?.installments.length || item.notes.length || item.evidenceFiles.length) ? <div className="mt-6 grid gap-5 lg:grid-cols-3">
+                  <div><h3 className="text-sm font-bold text-navy">Installment plan</h3><div className="mt-3 space-y-2">{item.invoices[0]?.installments.map((installment) => <div key={installment.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex justify-between"><b>₹{installment.amount.toLocaleString("en-IN")}</b><Badge tone={installment.status === "PAID" ? "green" : installment.status === "OVERDUE" ? "red" : "amber"}>{installment.status}</Badge></div><p className="mt-1 text-xs text-slate-500">Due {installment.dueDate.toLocaleDateString("en-IN")}</p></div>)}</div></div>
+                  <div><h3 className="text-sm font-bold text-navy">Case updates</h3><div className="mt-3 space-y-2">{item.notes.slice(0, 4).map((note) => <div key={note.id} className="rounded-xl border border-slate-200 p-3 text-sm"><p className="text-xs text-slate-400">{note.createdAt.toLocaleDateString("en-IN")}</p><p className="mt-1 text-slate-700">{note.content}</p></div>)}</div></div>
+                  <div><h3 className="text-sm font-bold text-navy">Case files</h3><div className="mt-3 space-y-2">{item.evidenceFiles.map((file) => <a key={file.id} href={`/api/documents/${file.id}/download`} className="block rounded-xl border border-slate-200 p-3 text-sm font-semibold text-navy hover:border-gold">{file.referenceNo ? `${file.referenceNo} · ` : ""}{file.fileName}</a>)}</div></div>
+                </div> : null}
                 <div className="mt-8 grid gap-4 md:grid-cols-5">
                   {stages.map(([status, label], index) => (
                     <div key={status} className="relative">
@@ -97,6 +115,7 @@ export default async function ClientDashboard() {
         </div>
       )}
     </main>
+    </>
   );
 }
 

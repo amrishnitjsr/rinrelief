@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 import { SiteHeader } from "@/components/site-header";
+import { LeadChatbot } from "@/components/lead-chatbot";
 
 const protections = [
   ["01", "Recovery harassment", "Stop abusive calls, intimidation, unauthorised visits, and contact with your family.", PhoneCall],
@@ -107,6 +108,7 @@ export default function Home() {
         <section id="contact" className="bg-paper px-5 py-20 sm:py-28 lg:px-8"><div className="mx-auto max-w-7xl"><p className="text-xs font-bold uppercase tracking-[.22em] text-[#9a7413]">Need help now?</p><div className="mt-4 flex flex-wrap items-end justify-between gap-6"><h2 className="max-w-2xl text-5xl font-black leading-none tracking-[-.06em] text-espresso sm:text-7xl">Talk to a real person, your way.</h2><p className="max-w-sm text-base leading-7 text-espresso/60">No long forms are required to ask a question. Call, WhatsApp, or email us. For a full review, start the private intake.</p></div><div className="mt-12 grid gap-4 sm:grid-cols-3"><a href="tel:+919876543210" className="rounded-2xl border border-espresso/15 bg-white p-6 transition hover:border-gold"><PhoneCall className="text-[#9a7413]" size={22} /><h3 className="mt-5 text-xl font-black text-espresso">Call us</h3><p className="mt-2 text-sm text-espresso/60">Speak with our support team.</p><p className="mt-4 font-bold text-espresso">+91 98765 43210</p></a><a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="rounded-2xl border border-espresso/15 bg-white p-6 transition hover:border-gold"><MessageCircle className="text-emerald-600" size={22} /><h3 className="mt-5 text-xl font-black text-espresso">WhatsApp us</h3><p className="mt-2 text-sm text-espresso/60">Send a message when it suits you.</p><p className="mt-4 font-bold text-espresso">Chat securely</p></a><a href="mailto:alerts@nyayashield.in" className="rounded-2xl border border-espresso/15 bg-white p-6 transition hover:border-gold"><Mail className="text-[#9a7413]" size={22} /><h3 className="mt-5 text-xl font-black text-espresso">Email us</h3><p className="mt-2 text-sm text-espresso/60">Share your question privately.</p><p className="mt-4 break-all font-bold text-espresso">alerts@nyayashield.in</p></a></div><div className="mt-8 text-center"><Link href="/case-intake"><Button className="rounded-full bg-espresso px-6 py-3.5 text-white hover:bg-[#4a3d33]">Start full case intake <ArrowRight size={16} /></Button></Link></div></div></section>
       </main>
       <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-3"><a href="tel:+919876543210" className="grid h-12 w-12 place-items-center rounded-full bg-red-600 text-white shadow-lg" aria-label="Emergency helpline"><PhoneCall size={20} /></a><a href="https://wa.me/919876543210" className="grid h-12 w-12 place-items-center rounded-full bg-emerald-600 text-white shadow-lg" aria-label="WhatsApp support"><MessageCircle size={21} /></a></div>
+      <LeadChatbot />
     </>
   );
 }

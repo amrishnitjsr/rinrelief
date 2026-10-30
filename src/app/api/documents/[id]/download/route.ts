@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const document = await prisma.caseDocument.findUnique({ where: { id }, include: { debtCase: true } });
   if (!document) return NextResponse.json({ error: "Document not found" }, { status: 404 });
-  if (session.user.role === "CLIENT" && document.debtCase.clientEmail.toLowerCase() !== session.user.email?.toLowerCase()) {
+  if (session.user.role === "CLIENT" && (!document.isClientVisible || document.debtCase.clientEmail.toLowerCase() !== session.user.email?.toLowerCase())) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return NextResponse.json({ downloadUrl: await createDownloadUrl(document.storageKey), fileName: document.fileName });

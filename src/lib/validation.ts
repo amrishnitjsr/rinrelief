@@ -17,10 +17,24 @@ export const createCaseSchema = z.object({
   receivedLegalNotice: z.boolean().default(false),
 });
 
+
 export const createDocumentSchema = z.object({
   caseId: z.string().cuid(),
   category: z.enum(["HARASSMENT_AUDIO", "SCREENSHOT_CHAT", "LEGAL_NOTICE_COPY", "LOAN_STATEMENT", "SETTLEMENT_LETTER"]),
   fileName: z.string().trim().min(1).max(255),
   fileMimeType: z.enum(["audio/mpeg", "audio/mp4", "image/jpeg", "image/png", "application/pdf"]),
   fileSize: z.number().int().positive().max(25 * 1024 * 1024),
+  title: z.string().trim().max(255).optional(),
+  referenceNo: z.string().trim().max(120).optional(),
+  isClientVisible: z.boolean().default(true),
+});
+
+export const createLeadSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().regex(/^\+?[0-9\s-]{10,18}$/),
+  email: z.string().trim().email().max(320),
+  city: z.string().trim().min(2).max(80),
+  state: z.string().trim().max(80).optional(),
+  category: z.enum(["DEBT_SETTLEMENT", "BANKING", "CIVIL", "CONSUMER"]),
+  issueSummary: z.string().trim().min(10).max(5_000),
 });

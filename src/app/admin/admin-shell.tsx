@@ -10,6 +10,7 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Menu,
   Settings,
   ShieldAlert,
@@ -38,7 +39,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
         </div>
         <nav className="space-y-1 p-3">
-          {([[LayoutDashboard, "Case queue", "/admin/cases"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "#"], [CreditCard, "Payment ledger", "/admin/payments"], [Settings, "Settings", "#"]] as [React.ElementType, string, string][]).map(([Icon, label, href]) => (
+          {([[LayoutDashboard, "Case queue", "/admin/cases"], [MessageCircle, "Lead queue", "/admin/leads"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "#"], [CreditCard, "Payment ledger", "/admin/payments"], [Settings, "Settings", "#"]] as [React.ElementType, string, string][]).map(([Icon, label, href]) => (
             <Link href={href} key={label} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white">
               <Icon size={18} />{!collapsed && label}
             </Link>

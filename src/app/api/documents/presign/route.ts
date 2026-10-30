@@ -10,12 +10,13 @@ export async function POST(request: Request) {
   if (!session?.user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   const parsed = createDocumentSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid document metadata" }, { status: 422 });
-  const { caseId, fileName, fileMimeType, fileSize, category } = parsed.data;
+  const { caseId, fileName, fileMimeType, fileSize, category, title, referenceNo, isClientVisible } = parsed.data;
   const debtCase = await prisma.debtCase.findUnique({ where: { id: caseId } });
   if (!debtCase) return NextResponse.json({ error: "Case not found" }, { status: 404 });
   if (session.user.role === "CLIENT" && debtCase.clientEmail.toLowerCase() !== session.user.email?.toLowerCase()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!["CLIENT", "ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const storageKey = `cases/${caseId}/${crypto.randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const uploadUrl = await createUploadUrl(storageKey, fileMimeType);
-  const document = await prisma.caseDocument.create({ data: { caseId, category, fileName, fileMimeType, fileSize, storageKey } });
+  const document = await prisma.caseDocument.create({ data: { caseId, category, fileName, fileMimeType, fileSize, storageKey, title, referenceNo, isClientVisible } });
   return NextResponse.json({ documentId: document.id, storageKey, uploadUrl }, { status: 201 });
 }

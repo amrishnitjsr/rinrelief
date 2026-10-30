@@ -7,11 +7,11 @@ function getRuntimeDatabaseUrl() {
   if (!databaseUrl) throw new Error("DATABASE_URL is required");
 
   const url = new URL(databaseUrl);
-  if (url.hostname.includes("-pooler.")) {
-    url.searchParams.set("connect_timeout", "15");
-    url.searchParams.set("pool_timeout", "20");
-    url.searchParams.set("connection_limit", "5");
-  }
+  if (url.hostname.includes("-pooler.")) url.hostname = url.hostname.replace("-pooler.", ".");
+  url.searchParams.delete("pgbouncer");
+  url.searchParams.set("connect_timeout", "30");
+  url.searchParams.set("pool_timeout", "30");
+  url.searchParams.set("connection_limit", "5");
   return url.toString();
 }
 

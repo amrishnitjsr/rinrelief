@@ -26,7 +26,7 @@ function LoginForm() {
       ? requestedCallbackUrl
       : mode === "admin"
         ? "/admin/cases"
-        : "/case-intake";
+        : "/change-password";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,12 +54,9 @@ function LoginForm() {
             <h1 className="serif mt-4 text-3xl font-bold text-navy">{mode === "admin" ? "Advocate workspace" : "Welcome back"}</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">{mode === "admin" ? "Secure access for advocates and administrators." : "Access your case updates and legal consultation."}</p>
           </div>
-          <div className="mt-7 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
-            <button type="button" onClick={() => setMode("client")} className={`rounded-lg py-2.5 ${mode === "client" ? "bg-white text-navy shadow-sm" : "text-slate-500"}`}>Client login</button>
-            <button type="button" onClick={() => setMode("admin")} className={`rounded-lg py-2.5 ${mode === "admin" ? "bg-white text-navy shadow-sm" : "text-slate-500"}`}>Admin login</button>
-          </div>
+          {mode === "client" && <div className="mt-7 rounded-xl bg-slate-100 p-3 text-center text-sm font-semibold text-navy">Client login</div>}
           <form onSubmit={submit} className="mt-7 space-y-4">
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder={mode === "admin" ? "advocate@yourfirm.com" : "you@example.com"} /></label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">{mode === "admin" ? "Email address" : "Email or case ID"}<input required type="text" value={email} onChange={(event) => setEmail(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder={mode === "admin" ? "advocate@yourfirm.com" : "you@example.com or CASE-20261029-ABC12"} /></label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Password
               <span className="relative">
                 <input required minLength={8} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3.5 py-3 pr-11 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="At least 8 characters" />
@@ -70,7 +67,7 @@ function LoginForm() {
             <Button type="submit" disabled={loading} className="w-full">{loading ? "Verifying..." : mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
           </form>
           {mode === "client" && <Link href="/forgot-password" className="mt-5 block text-center text-sm font-bold text-navy underline">Forgot your password?</Link>}
-          {mode === "client" && <p className="mt-6 text-center text-sm text-slate-500">New to Rinrelife? <Link href="/register" className="font-bold text-navy underline">Create a client account</Link></p>}
+          {mode === "client" && <p className="mt-6 text-center text-sm text-slate-500">Client credentials are created by the admin after consultation. Please use the case ID or email and temporary password shared with you.</p>}
           {mode === "admin" && <p className="mt-6 text-center text-xs leading-5 text-slate-400">Admin accounts are created by the deployment owner. Do not share advocate credentials.</p>}
         </Card>
       </div>

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 const registrationSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -13,6 +14,10 @@ const registrationSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "ADVOCATE") {
+      return NextResponse.json({ error: "Client accounts can only be created by an administrator after consultation." }, { status: 403 });
+    }
     const parsed = registrationSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "Please provide valid account details." }, { status: 422 });
     const email = parsed.data.email.toLowerCase();
