@@ -208,6 +208,7 @@ model Installment {
   invoiceId   String
   invoice     Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   amount      Float
+  percentage  Float             @default(0)
   dueDate     DateTime
   status      InstallmentStatus @default(PENDING)
   paidAt      DateTime?

@@ -147,23 +147,127 @@ const operationsSchema = z.object({
   status: z.enum(["INQUIRY_RECEIVED", "CONSULTATION_PAID", "LEGAL_NOTICE_SENT", "UNDER_NEGOTIATION", "SETTLEMENT_REACHED", "CLOSED"]),
   feeAmount: z.coerce.number().nonnegative(),
   totalPaid: z.coerce.number().nonnegative(),
+  installmentCount: z.coerce.number().int().min(0).max(24),
+  installmentPercentages: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    },
+    z.array(z.coerce.number().positive()).max(24),
+  ),
+  installmentDueDates: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    },
+    z.array(z.coerce.date()).max(24),
+  ),
   clientUpdate: z.string().trim().max(5000).optional(),
+}).superRefine((data, context) => {
+  if (data.installmentCount !== data.installmentPercentages.length) {
+    context.addIssue({ code: "custom", path: ["installmentPercentages"], message: "Add a percentage for every installment." });
+  }
+  if (data.installmentCount !== data.installmentDueDates.length) {
+    context.addIssue({ code: "custom", path: ["installmentDueDates"], message: "Add a due date for every installment." });
+  }
+  if (data.installmentCount > 0 && Math.abs(data.installmentPercentages.reduce((sum, value) => sum + value, 0) - 100) > 0.01) {
+    context.addIssue({ code: "custom", path: ["installmentPercentages"], message: "Installment percentages must add up to 100%." });
+  }
+  if (data.installmentCount > 0 && data.feeAmount <= 0) {
+    context.addIssue({ code: "custom", path: ["feeAmount"], message: "Agreed fee must be greater than zero when installments are used." });
+  }
 });
 
 export async function updateCaseOperations(input: unknown) {
   const session = await auth();
   if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Admin access required");
   const data = operationsSchema.parse(input);
-  const item = await prisma.debtCase.findUnique({ where: { id: data.caseId }, include: { invoices: { take: 1 } } });
+  const item = await prisma.debtCase.findUnique({ where: { id: data.caseId }, include: { invoices: { include: { installments: true }, take: 1 } } });
   if (!item) throw new Error("Case not found");
   await prisma.$transaction(async (transaction) => {
     await transaction.debtCase.update({ where: { id: item.id }, data: { status: data.status, feeAmount: data.feeAmount } });
     const invoice = item.invoices[0] ?? await transaction.invoice.create({ data: { clientId: (await transaction.user.findUniqueOrThrow({ where: { email: item.clientEmail } })).id, caseId: item.id, totalFee: data.feeAmount } });
-    await transaction.invoice.update({ where: { id: invoice.id }, data: { totalFee: data.feeAmount, totalPaid: data.totalPaid } });
+    const planChanged = invoice.installments.length !== data.installmentCount ||
+      invoice.installments.some((installment, index) =>
+        Math.abs(installment.percentage - (data.installmentPercentages[index] ?? 0)) > 0.01 ||
+        installment.dueDate.getTime() !== (data.installmentDueDates[index]?.getTime() ?? 0),
+      );
+    if (planChanged && invoice.installments.some((installment) => installment.status === "PAID")) {
+      throw new Error("Paid installments cannot be changed. Update the remaining plan after resolving paid installments.");
+    }
+    await transaction.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        totalFee: data.feeAmount,
+        totalPaid: data.totalPaid,
+        feeModel: data.installmentCount > 0 ? "INSTALLMENT" : "FLAT",
+        installments: planChanged ? {
+          deleteMany: {},
+          create: data.installmentPercentages.map((percentage, index) => {
+            const previousAmounts = data.installmentPercentages
+              .slice(0, index)
+              .reduce((sum, previousPercentage) => sum + Math.round(data.feeAmount * previousPercentage) / 100, 0);
+            const amount = index === data.installmentPercentages.length - 1
+              ? Math.round((data.feeAmount - previousAmounts) * 100) / 100
+              : Math.round(data.feeAmount * percentage) / 100;
+            return { percentage, amount, dueDate: data.installmentDueDates[index] };
+          }),
+        } : undefined,
+      },
+    });
     if (data.clientUpdate) await transaction.caseNote.create({ data: { caseId: item.id, authorId: session.user.id, content: data.clientUpdate, isInternalOnly: false } });
-    await transaction.auditLog.create({ data: { actorId: session.user.id, action: "CASE_UPDATED", entityType: "DebtCase", entityId: item.id, metadata: { status: data.status, feeAmount: data.feeAmount, totalPaid: data.totalPaid } } });
+    await transaction.auditLog.create({ data: { actorId: session.user.id, action: "CASE_UPDATED", entityType: "DebtCase", entityId: item.id, metadata: { status: data.status, feeAmount: data.feeAmount, totalPaid: data.totalPaid, installmentPercentages: data.installmentPercentages } } });
   }, { maxWait: 10_000, timeout: 20_000 });
   revalidatePath(`/admin/cases/${item.caseNumber ?? item.id}`);
+  revalidatePath("/dashboard");
+}
+
+export async function markInstallmentPaid(installmentId: string) {
+  const session = await auth();
+  if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Admin access required");
+  const parsedId = z.string().cuid().safeParse(installmentId);
+  if (!parsedId.success) throw new Error("Invalid installment");
+
+  const installment = await prisma.installment.findUnique({
+    where: { id: parsedId.data },
+    include: { invoice: { include: { debtCase: { select: { id: true, caseNumber: true } } } } },
+  });
+  if (!installment) throw new Error("Installment not found");
+  if (installment.status === "PAID") return;
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.installment.update({
+      where: { id: installment.id },
+      data: { status: "PAID", paidAt: new Date() },
+    });
+    const paidInstallments = await transaction.installment.findMany({
+      where: { invoiceId: installment.invoiceId, status: "PAID" },
+      select: { amount: true },
+    });
+    await transaction.invoice.update({
+      where: { id: installment.invoiceId },
+      data: { totalPaid: paidInstallments.reduce((sum, item) => sum + item.amount, 0) },
+    });
+    await transaction.auditLog.create({
+      data: {
+        actorId: session.user.id,
+        action: "INSTALLMENT_MARKED_PAID",
+        entityType: "Installment",
+        entityId: installment.id,
+        metadata: { invoiceId: installment.invoiceId, amount: installment.amount },
+      },
+    });
+  });
+
+  revalidatePath(`/admin/cases/${installment.invoice.debtCase?.caseNumber ?? installment.invoice.debtCase?.id ?? ""}`);
   revalidatePath("/dashboard");
 }
 
