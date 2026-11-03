@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Bell,
@@ -17,9 +18,10 @@ import {
   Users,
 } from "lucide-react";
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({ children, isSuperAdmin, priorityCaseCount }: { children: React.ReactNode; isSuperAdmin: boolean; priorityCaseCount: number }) {
   const [collapsed, setCollapsed] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
+  const pathname = usePathname();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -39,11 +41,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </button>
         </div>
         <nav className="space-y-1 p-3">
-          {([[LayoutDashboard, "Case queue", "/admin/cases"], [MessageCircle, "Lead queue", "/admin/leads"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "#"], [CreditCard, "Payment ledger", "/admin/payments"], [Settings, "Settings", "#"]] as [React.ElementType, string, string][]).map(([Icon, label, href]) => (
-            <Link href={href} key={label} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white">
+          {([[LayoutDashboard, "Case queue", "/admin/cases"], [MessageCircle, "Lead queue", "/admin/leads"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "/admin/cases"], [CreditCard, "Payment ledger", "/admin/payments"], ...(isSuperAdmin ? [[Settings, "Settings", "/admin/settings"]] : [])] as [React.ElementType, string, string][]).map(([Icon, label, href]) => {
+            const active = label === "Case queue" ? pathname === "/admin/cases" : href !== "/admin/cases" && pathname.startsWith(href);
+            return <Link href={href} key={label} aria-current={active ? "page" : undefined} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${active ? "bg-white/15 text-white ring-1 ring-white/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
               <Icon size={18} />{!collapsed && label}
-            </Link>
-          ))}
+            </Link>;
+          })}
         </nav>
         <button onClick={() => signOut({ callbackUrl: "/login?role=admin" })} className={`absolute bottom-5 flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 ${collapsed ? "left-3 right-3" : "left-4 right-4"}`}>
           <LogOut size={18} />{!collapsed && "Sign out"}
@@ -52,9 +55,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <div className={`transition-all ${collapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur lg:px-8">
           <div className="flex items-center gap-3"><Menu className="text-slate-500 lg:hidden" /><div><p className="text-xs font-bold uppercase tracking-widest text-red-600">Live operations</p><p className="font-semibold text-navy">{greeting}, Adv. Tisha</p></div></div>
-          <div className="flex items-center gap-4"><div className="hidden items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-xs font-bold text-red-700 sm:flex"><span className="h-2 w-2 animate-pulse rounded-full bg-red-600" /> 7 urgent alerts</div><Bell className="text-slate-500" /></div>
+          <div className="flex items-center gap-4"><div className={`hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-bold sm:flex ${priorityCaseCount ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}><span className={`h-2 w-2 rounded-full ${priorityCaseCount ? "animate-pulse bg-red-600" : "bg-emerald-600"}`} /> {priorityCaseCount ? `${priorityCaseCount} priority alert${priorityCaseCount === 1 ? "" : "s"}` : "No priority alerts"}</div><Bell className="text-slate-500" /></div>
         </header>
-        <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 lg:px-8"><b>Priority queue:</b> 3 cases have active Section 138 notices requiring review today.</div>
+        <div className={`border-b px-5 py-3 text-sm lg:px-8 ${priorityCaseCount ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}><b>{priorityCaseCount ? "Priority queue:" : "Priority queue clear:"}</b> {priorityCaseCount ? `${priorityCaseCount} case${priorityCaseCount === 1 ? "" : "s"} need review for harassment or legal notice.` : "No active cases require priority review."}</div>
         <main className="p-5 lg:p-8">{children}</main>
       </div>
     </div>

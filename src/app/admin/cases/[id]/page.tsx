@@ -16,7 +16,7 @@ export default async function CaseWorkspace({ params }: { params: Promise<{ id: 
       evidenceFiles: true,
       notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
       payment: true,
-      invoices: { include: { installments: true }, orderBy: { createdAt: "desc" }, take: 1 },
+      invoices: { include: { installments: { orderBy: { dueDate: "asc" } } }, orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
   if (!item) notFound();

@@ -12,6 +12,7 @@ const stages = [
   ["LEGAL_NOTICE_SENT", "Notice sent"],
   ["UNDER_NEGOTIATION", "Under bank negotiation"],
   ["SETTLEMENT_REACHED", "Settlement letter received"],
+  ["CLOSED", "Case closed"],
 ] as const;
 
 const statusLabels: Record<string, string> = {
@@ -22,6 +23,10 @@ const statusLabels: Record<string, string> = {
   SETTLEMENT_REACHED: "Settlement letter received",
   CLOSED: "Case closed",
 };
+
+function formatStoredDate(value: Date) {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "UTC" }).format(value);
+}
 
 export default async function ClientDashboard() {
   const session = await auth();
@@ -73,14 +78,13 @@ export default async function ClientDashboard() {
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
                       <h2 className="font-bold text-navy">{item.bankOrLenderName}</h2>
-                      <Badge tone={item.facingHarassment ? "red" : "blue"}>{item.facingHarassment ? "Priority support" : "Active case"}</Badge>
+                      <Badge tone={item.status === "CLOSED" ? "slate" : item.facingHarassment ? "red" : "blue"}>{item.status === "CLOSED" ? "Case closed" : item.facingHarassment ? "Priority support" : "Active case"}</Badge>
                     </div>
-                    <p className="mt-1 font-mono text-xs text-slate-400">Case {item.id}</p>
+                    <p className="mt-1 font-mono text-xs text-slate-400">Case {item.caseNumber ?? item.id}</p>
                   </div>
                   <div className="flex flex-col items-end gap-3 text-right">
                     <p className="text-xs uppercase tracking-wider text-slate-500">Current stage</p>
                     <p className="mt-1 font-bold text-navy">{statusLabels[item.status] ?? item.status}</p>
-                    {item.payment?.status !== "CAPTURED" && item.status !== "CLOSED" && <Link href={`/payments/${item.id}`}><Button type="button">Pay consultation</Button></Link>}
                   </div>
                 </div>
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -94,7 +98,7 @@ export default async function ClientDashboard() {
                   <Summary icon={<FileText size={16} />} label="Outstanding" value={`₹${Math.max(0, (item.invoices[0]?.totalFee ?? item.feeAmount) - (item.invoices[0]?.totalPaid ?? 0) + (item.invoices[0]?.penaltyAmount ?? 0)).toLocaleString("en-IN")}`} />
                 </div>
                 {(item.invoices[0]?.installments.length || item.notes.length || item.evidenceFiles.length) ? <div className="mt-6 grid gap-5 lg:grid-cols-3">
-                  <div><h3 className="text-sm font-bold text-navy">Installment plan</h3><div className="mt-3 space-y-2">{item.invoices[0]?.installments.map((installment) => <div key={installment.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex justify-between"><b>₹{installment.amount.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">({installment.percentage}%)</span></b><Badge tone={installment.status === "PAID" ? "green" : installment.status === "OVERDUE" ? "red" : "amber"}>{installment.status}</Badge></div><p className="mt-1 text-xs text-slate-500">Due {installment.dueDate.toLocaleDateString("en-IN")}</p></div>)}</div></div>
+                  <div><h3 className="text-sm font-bold text-navy">Installment plan</h3><div className="mt-3 space-y-2">{item.invoices[0]?.installments.map((installment) => <div key={installment.id} className="rounded-xl bg-slate-50 p-3 text-sm"><div className="flex justify-between"><b>₹{installment.amount.toLocaleString("en-IN")} <span className="text-xs font-normal text-slate-500">({installment.percentage}%)</span></b><Badge tone={installment.status === "PAID" ? "green" : installment.status === "OVERDUE" ? "red" : "amber"}>{installment.status}</Badge></div><p className="mt-1 text-xs text-slate-500">Due {formatStoredDate(installment.dueDate)}</p></div>)}</div></div>
                   <div><h3 className="text-sm font-bold text-navy">Case updates</h3><div className="mt-3 space-y-2">{item.notes.slice(0, 4).map((note) => <div key={note.id} className="rounded-xl border border-slate-200 p-3 text-sm"><p className="text-xs text-slate-400">{note.createdAt.toLocaleDateString("en-IN")}</p><p className="mt-1 text-slate-700">{note.content}</p></div>)}</div></div>
                   <div><h3 className="text-sm font-bold text-navy">Case files</h3><div className="mt-3 space-y-2">{item.evidenceFiles.map((file) => <a key={file.id} href={`/api/documents/${file.id}/download`} className="block rounded-xl border border-slate-200 p-3 text-sm font-semibold text-navy hover:border-gold">{file.referenceNo ? `${file.referenceNo} · ` : ""}{file.fileName}</a>)}</div></div>
                 </div> : null}

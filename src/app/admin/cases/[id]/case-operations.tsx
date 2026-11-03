@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { markInstallmentPaid, updateCaseOperations } from "@/app/actions/case-actions";
 import { Button, Card, Field } from "@/components/ui";
 
@@ -34,16 +35,19 @@ function distributeDueDates(count: number) {
 }
 
 export default function CaseOperations({ caseId, status, feeAmount, totalPaid, installments }: Props) {
+  const router = useRouter();
   const installmentPercentages = installments.map((installment) => installment.percentage);
   const initialCount = installmentPercentages.length;
   const [installmentCount, setInstallmentCount] = useState(initialCount);
-  const [percentages, setPercentages] = useState(initialCount ? installmentPercentages : [100]);
+  const [percentages, setPercentages] = useState(initialCount ? installmentPercentages : []);
   const [dueDates, setDueDates] = useState(initialCount ? installments.map((installment) => dateInputValue(new Date(installment.dueDate))) : []);
   const [selectedStatus, setSelectedStatus] = useState(status);
   const [installmentFilter, setInstallmentFilter] = useState("ALL");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isMarkingPaid, startMarkingPaid] = useTransition();
+  const [isUpdatingStatus, startUpdatingStatus] = useTransition();
+  const [isSaving, startSaving] = useTransition();
   const totalPercentage = useMemo(() => percentages.reduce((sum, value) => sum + (Number(value) || 0), 0), [percentages]);
   const paidCount = installments.filter((installment) => installment.status === "PAID").length;
   const visibleInstallments = installments.filter((installment) => installmentFilter === "ALL" || installment.status === installmentFilter);
@@ -59,12 +63,16 @@ export default function CaseOperations({ caseId, status, feeAmount, totalPaid, i
     event.preventDefault();
     setError("");
     setMessage("");
-    try {
-      await updateCaseOperations({ caseId, ...Object.fromEntries(new FormData(event.currentTarget).entries()), installmentCount, installmentPercentages: JSON.stringify(percentages), installmentDueDates: JSON.stringify(dueDates) });
-      setMessage("Client portal updated successfully.");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not update case");
-    }
+    const formData = new FormData(event.currentTarget);
+    startSaving(async () => {
+      try {
+        await updateCaseOperations({ caseId, ...Object.fromEntries(formData.entries()), installmentCount, installmentPercentages: JSON.stringify(percentages), installmentDueDates: JSON.stringify(dueDates) });
+        setMessage("Client portal updated successfully.");
+        router.refresh();
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not update case");
+      }
+    });
   }
 
   function markPaid(installmentId: string) {
@@ -73,9 +81,31 @@ export default function CaseOperations({ caseId, status, feeAmount, totalPaid, i
     startMarkingPaid(async () => {
       try {
         await markInstallmentPaid(installmentId);
-        window.location.reload();
+        router.refresh();
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Could not mark installment as paid");
+      }
+    });
+  }
+
+  function updateStatus(statusValue: string) {
+    setError("");
+    setMessage("");
+    setSelectedStatus(statusValue);
+    startUpdatingStatus(async () => {
+      try {
+        const response = await fetch(`/api/admin/cases/${encodeURIComponent(caseId)}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: statusValue }),
+        });
+        const result = await response.json() as { error?: string };
+        if (!response.ok) throw new Error(result.error ?? "Could not update case status");
+        setMessage("Case status updated.");
+        router.refresh();
+      } catch (caught) {
+        setSelectedStatus(status);
+        setError(caught instanceof Error ? caught.message : "Could not update case status");
       }
     });
   }
@@ -94,8 +124,8 @@ export default function CaseOperations({ caseId, status, feeAmount, totalPaid, i
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-navy">Case status</h3>
             <div className="flex flex-wrap gap-1.5">
-              {["CONSULTATION_PAID", "UNDER_NEGOTIATION", "CLOSED"].map((quickStatus) => (
-                <button key={quickStatus} type="button" onClick={() => setSelectedStatus(quickStatus)} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${selectedStatus === quickStatus ? "bg-navy text-white" : "bg-white text-slate-600"}`}>{quickStatus.replaceAll("_", " ")}</button>
+              {["INQUIRY_RECEIVED", "CONSULTATION_PAID", "LEGAL_NOTICE_SENT", "UNDER_NEGOTIATION", "SETTLEMENT_REACHED", "CLOSED"].map((quickStatus) => (
+                <button key={quickStatus} type="button" disabled={isUpdatingStatus} onClick={() => updateStatus(quickStatus)} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-transform duration-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${selectedStatus === quickStatus ? "bg-navy text-white" : "bg-white text-slate-600"}`}>{isUpdatingStatus && selectedStatus === quickStatus ? "Updating..." : quickStatus.replaceAll("_", " ")}</button>
               ))}
             </div>
           </div>
@@ -148,7 +178,7 @@ export default function CaseOperations({ caseId, status, feeAmount, totalPaid, i
               {visibleInstallments.map((installment) => (
                 <div key={installment.id} className="flex flex-col gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <span>₹{installment.amount.toLocaleString("en-IN")} · Due {new Date(installment.dueDate).toLocaleDateString("en-IN")}</span>
-                  {installment.status === "PAID" ? <span className="font-bold text-emerald-600">Paid</span> : <button type="button" disabled={isMarkingPaid} onClick={() => markPaid(installment.id)} className="w-full rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 sm:w-auto">Mark as paid</button>}
+                  {installment.status === "PAID" ? <span className="font-bold text-emerald-600">Paid</span> : <button type="button" disabled={isMarkingPaid} onClick={() => markPaid(installment.id)} className="w-full rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-transform duration-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">{isMarkingPaid ? "Marking..." : "Mark as paid"}</button>}
                 </div>
               ))}
               {visibleInstallments.length === 0 && <p className="py-2 text-xs text-slate-500">No installments match this filter.</p>}
@@ -165,7 +195,7 @@ export default function CaseOperations({ caseId, status, feeAmount, totalPaid, i
         </section>
         {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700 lg:col-span-12">{error}</p>}
         {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700 lg:col-span-12">{message}</p>}
-        <Button type="submit" className="lg:col-span-12">Save and publish update</Button>
+        <Button type="submit" loading={isSaving} loadingText="Saving update..." className="lg:col-span-12">Save and publish update</Button>
       </form>
     </Card>
   );

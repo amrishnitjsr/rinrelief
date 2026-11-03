@@ -64,7 +64,7 @@ function LoginForm() {
               </span>
             </label>
             {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full">{loading ? "Verifying..." : mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
+            <Button type="submit" loading={loading} loadingText="Verifying..." className="w-full">{mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
           </form>
           {mode === "client" && <Link href="/forgot-password" className="mt-5 block text-center text-sm font-bold text-navy underline">Forgot your password?</Link>}
           {mode === "client" && <p className="mt-6 text-center text-sm text-slate-500">Client credentials are created by the admin after consultation. Please use the case ID or email and temporary password shared with you.</p>}

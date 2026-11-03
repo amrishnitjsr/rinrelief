@@ -15,27 +15,35 @@ export function LeadChatbot() {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState<string>();
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setSubmitting(true);
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(form.entries())),
-    });
-    const result = (await response.json()) as { referenceNo?: string; error?: string };
-    if (!response.ok || !result.referenceNo) {
-      setError(result.error ?? "We could not submit your inquiry.");
-      return;
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(form.entries())),
+      });
+      const result = (await response.json()) as { referenceNo?: string; error?: string };
+      if (!response.ok || !result.referenceNo) {
+        setError(result.error ?? "We could not submit your inquiry.");
+        return;
+      }
+      setSubmitted(result.referenceNo);
+    } catch {
+      setError("We could not submit your inquiry. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitted(result.referenceNo);
   }
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-espresso px-5 py-3 text-sm font-bold text-white shadow-xl transition hover:bg-[#4a3d33]" aria-label="Open legal inquiry chat">
+      <button onClick={() => setOpen(true)} className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-espresso px-5 py-3 text-sm font-bold text-white shadow-xl transition-transform duration-100 active:scale-95 hover:bg-[#4a3d33]" aria-label="Open legal inquiry chat">
         <MessageCircle size={18} /> Talk to a case manager
       </button>
       {open && (
@@ -53,7 +61,7 @@ export function LeadChatbot() {
                 <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Legal category<select name="category" required className="rounded-xl border border-slate-200 bg-white px-3.5 py-3 font-normal outline-none focus:border-gold"><option value="">Select a category</option>{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                 <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Brief issue description<textarea name="issueSummary" required minLength={10} rows={3} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold" /></label>
                 {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-                <Button type="submit">Submit inquiry <ArrowRight size={16} /></Button>
+                <Button type="submit" loading={submitting} loadingText="Submitting inquiry...">Submit inquiry <ArrowRight size={16} /></Button>
               </form>
             )}
           </Card>

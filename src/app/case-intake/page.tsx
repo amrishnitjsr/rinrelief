@@ -18,7 +18,6 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { Badge, Button, Card, Field } from "@/components/ui";
-import { PaymentButton } from "@/components/payment-button";
 import { SiteHeader } from "@/components/site-header";
 
 type FormData = {
@@ -56,8 +55,7 @@ function getHarassmentType(violations: string[]): string | undefined {
 export default function CaseIntake() {
   const [step, setStep] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
-  const [caseDetails, setCaseDetails] = useState<{ id: string; caseNumber: string; paymentAccessToken: string }>();
-  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [caseDetails, setCaseDetails] = useState<{ id: string; caseNumber: string }>();
   const [error, setError] = useState("");
   const { register, handleSubmit, trigger, getValues } = useForm<FormData>({
     defaultValues: { loanType: "Personal Loan", harassment: "yes", notice: "no", violations: [] },
@@ -94,12 +92,12 @@ export default function CaseIntake() {
         receivedLegalNotice: data.notice === "yes",
       }),
     });
-    const result = (await response.json()) as { id?: string; caseNumber?: string; paymentAccessToken?: string; error?: string };
-    if (!response.ok || !result.id || !result.caseNumber || !result.paymentAccessToken) {
+    const result = (await response.json()) as { id?: string; caseNumber?: string; error?: string };
+    if (!response.ok || !result.id || !result.caseNumber) {
       setError(result.error ?? "We could not submit your case. Please try again.");
       return;
     }
-    setCaseDetails({ id: result.id, caseNumber: result.caseNumber, paymentAccessToken: result.paymentAccessToken });
+    setCaseDetails({ id: result.id, caseNumber: result.caseNumber });
   };
 
   if (caseDetails) {
@@ -114,25 +112,19 @@ export default function CaseIntake() {
             <p className="mt-6 text-sm font-bold uppercase tracking-[.16em] text-[#9b7b18]">Inquiry received</p>
             <h1 className="serif mt-3 text-4xl font-bold text-navy">Your legal shield is now in review.</h1>
             <p className="mt-4 leading-7 text-slate-600">
-              Pay ₹1 to book your consultation slot. After payment, a case manager will contact you shortly. If this
-              is urgent, request a call now.
+              Your case has been submitted for review. A case manager will contact you shortly. If this is urgent,
+              request a call now.
             </p>
             <div className="mt-7 rounded-2xl bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Private case ID</p>
               <p className="mt-2 break-all font-mono text-lg font-bold text-navy">{caseDetails.caseNumber}</p>
             </div>
             <div className="mt-6 rounded-2xl border border-[#ead99a] bg-[#fffdf4] p-5 text-left">
-              <p className="text-sm font-bold text-navy">Book your consultation slot</p>
+              <p className="text-sm font-bold text-navy">What happens next?</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                A secure ₹1 payment confirms your request. Your case manager will contact you shortly after payment.
+                A case manager will review your details and contact you to discuss consultation and fee options.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <PaymentButton
-                  caseId={caseDetails.id}
-                  amount={1}
-                  accessToken={caseDetails.paymentAccessToken}
-                  onSuccess={() => setPaymentComplete(true)}
-                />
                 <a
                   href={`https://wa.me/919876543210?text=${encodeURIComponent(`Urgent callback request for case ${caseDetails.caseNumber}`)}`}
                   target="_blank"
@@ -148,11 +140,6 @@ export default function CaseIntake() {
                   <PhoneCall size={16} /> Call urgently
                 </a>
               </div>
-              {paymentComplete && (
-                <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
-                  Payment received securely. Your consultation slot is booked, and a case manager will contact you shortly.
-                </p>
-              )}
             </div>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link href="/">
@@ -247,14 +234,14 @@ export default function CaseIntake() {
               )}
               {step === 3 && (
                 <motion.div key="contact" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <StepTitle title="Where should we reach you?" subtitle="A senior case manager will call after your secure consultation payment." />
+                  <StepTitle title="Where should we reach you?" subtitle="A senior case manager will call after reviewing your case details." />
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Borrower name" placeholder="Full legal name" {...register("name", { required: true })} />
                     <Field label="Mobile number" placeholder="+91 98765 43210" {...register("mobile", { required: true })} />
                     <Field label="City" placeholder="e.g. Mumbai" {...register("city", { required: true })} />
                     <Field label="Email" type="email" placeholder="you@example.com" {...register("email", { required: true })} />
                   </div>
-                  <Card className="mt-7 border-[#ead99a] bg-[#fffdf4] p-5 shadow-none"><div className="flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-[#9b7b18]">Next step</p><h3 className="serif mt-1 text-2xl font-bold text-navy">Initial legal consultation</h3></div><p className="text-2xl font-bold text-navy">₹1</p></div><div className="mt-4 space-y-2 text-sm text-slate-600"><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> 30-minute advocate consultation</p><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> Case triage and recovery-response plan</p><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> Receipt issued automatically after payment</p></div></Card>
+                  <Card className="mt-7 border-[#ead99a] bg-[#fffdf4] p-5 shadow-none"><div><p className="text-xs font-bold uppercase tracking-wider text-[#9b7b18]">Next step</p><h3 className="serif mt-1 text-2xl font-bold text-navy">Initial case review</h3></div><div className="mt-4 space-y-2 text-sm text-slate-600"><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> Case review by an advocate</p><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> Recovery-response plan discussion</p><p className="flex items-center gap-2"><Check size={15} className="text-emerald-600" /> Consultation and fee options explained directly</p></div></Card>
                 </motion.div>
               )}
             </AnimatePresence>

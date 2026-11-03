@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
             </label>
             {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{message}</p>}
             {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-            <Button type="submit" disabled={loading} className="w-full">{loading ? "Sending link..." : "Email me a reset link"} <ArrowRight size={16} /></Button>
+            <Button type="submit" loading={loading} loadingText="Sending link..." className="w-full">Email me a reset link <ArrowRight size={16} /></Button>
           </form>
           <Link href="/login" className="mt-6 flex items-center justify-center gap-2 text-sm font-bold text-navy"><ArrowLeft size={15} /> Back to sign in</Link>
         </Card>

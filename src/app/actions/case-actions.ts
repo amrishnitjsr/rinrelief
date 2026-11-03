@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { createCaseSchema } from "@/lib/validation";
 import { notifyAdminOfNewCase } from "@/lib/email";
-import { createPaymentAccessToken, CURRENT_PAYMENT_AMOUNT } from "@/lib/payments";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { decryptCredential, encryptCredential } from "@/lib/credential-vault";
+import type { Session } from "next-auth";
+import { invalidateCache } from "@/lib/redis";
+import { ADMIN_CASE_QUEUE_CACHE_KEY } from "@/lib/cache-keys";
 
 function createCaseNumber() {
   const now = new Date();
@@ -31,7 +33,7 @@ export async function createDebtCase(input: unknown) {
     data: {
       ...data,
       caseNumber: createCaseNumber(),
-      feeAmount: CURRENT_PAYMENT_AMOUNT,
+      feeAmount: 0,
       clientEmail: user.email.toLowerCase(),
       clientName: existingClient ? user.name : data.clientName,
       clientPhone: existingClient ? user.phone : data.clientPhone,
@@ -43,10 +45,10 @@ export async function createDebtCase(input: unknown) {
     console.error("case notification failed", { caseId: debtCase.id, error });
   }
   revalidatePath("/admin/cases");
+  await invalidateCache(ADMIN_CASE_QUEUE_CACHE_KEY);
   return {
     id: debtCase.id,
     caseNumber: debtCase.caseNumber ?? debtCase.id,
-    paymentAccessToken: createPaymentAccessToken(debtCase.id),
     status: debtCase.status,
   };
 }
@@ -58,6 +60,15 @@ export async function addCaseNote(input: { caseId: string; content: string; isIn
   const note = await prisma.caseNote.create({
     data: { caseId: input.caseId, authorId: session.user.id, content: input.content.trim(), isInternalOnly: input.isInternalOnly },
   });
+  await prisma.auditLog.create({
+    data: {
+      actorId: session.user.id,
+      action: "CASE_NOTE_ADDED",
+      entityType: "CaseNote",
+      entityId: note.id,
+      metadata: { caseId: input.caseId, isInternalOnly: input.isInternalOnly },
+    },
+  });
   revalidatePath(`/admin/cases/${input.caseId}`);
   return note;
 }
@@ -66,6 +77,9 @@ export async function updateCaseStatus(caseId: string, status: "INQUIRY_RECEIVED
   const session = await auth();
   if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Advocate access required");
   const updated = await prisma.debtCase.update({ where: { id: caseId }, data: { status } });
+  await prisma.auditLog.create({
+    data: { actorId: session.user.id, action: "CASE_STATUS_UPDATED", entityType: "DebtCase", entityId: caseId, metadata: { status } },
+  });
   revalidatePath(`/admin/cases/${caseId}`);
   revalidatePath("/admin/cases");
   return updated;
@@ -73,12 +87,6 @@ export async function updateCaseStatus(caseId: string, status: "INQUIRY_RECEIVED
 
 const convertLeadSchema = z.object({
   leadId: z.string().cuid(),
-  bankOrLenderName: z.string().trim().min(2),
-  loanType: z.enum(["CREDIT_CARD", "PERSONAL_LOAN", "APP_LOAN_INSTANT", "BUSINESS_LOAN", "HOME_OR_AUTO_LOAN"]),
-  totalOutstanding: z.coerce.number().positive(),
-  feeAmount: z.coerce.number().nonnegative(),
-  installmentAmount: z.coerce.number().positive().optional(),
-  installmentDueDate: z.coerce.date().optional(),
 });
 
 function generatedCaseNumber() {
@@ -91,7 +99,10 @@ function generatedClientPassword() {
 
 export async function convertLeadToCase(input: unknown) {
   const session = await auth();
-  if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Admin access required");
+  const actor = session?.user?.email
+    ? await prisma.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true, role: true } })
+    : null;
+  if (!actor || !["ADVOCATE", "SUPER_ADMIN"].includes(actor.role)) throw new Error("Admin access required");
   const data = convertLeadSchema.parse(input);
   const lead = await prisma.lead.findUnique({ where: { id: data.leadId } });
   if (!lead) throw new Error("Lead not found");
@@ -114,27 +125,24 @@ export async function convertLeadToCase(input: unknown) {
         clientEmail: lead.email.toLowerCase(),
         clientPhone: lead.phone,
         city: lead.city,
-        bankOrLenderName: data.bankOrLenderName,
-        loanType: data.loanType,
-        totalOutstanding: data.totalOutstanding,
+        bankOrLenderName: "To be updated",
+        loanType: "PERSONAL_LOAN",
+        totalOutstanding: 0,
         overdueDurationDays: 0,
-        feeAmount: data.feeAmount,
-        assignedAdvocateId: session.user.id,
+        feeAmount: 0,
+        assignedAdvocateId: actor.id,
       },
     });
     await transaction.invoice.create({
       data: {
         clientId: user.id,
         caseId: debtCase.id,
-        feeModel: data.installmentAmount ? "INSTALLMENT" : "FLAT",
-        totalFee: data.feeAmount,
-        installments: data.installmentAmount && data.installmentDueDate ? {
-          create: { amount: data.installmentAmount, dueDate: data.installmentDueDate },
-        } : undefined,
+        feeModel: "FLAT",
+        totalFee: 0,
       },
     });
-    await transaction.lead.update({ where: { id: lead.id }, data: { status: "CONVERTED", convertedCaseId: debtCase.id, assignedToId: session.user.id } });
-    await transaction.auditLog.create({ data: { actorId: session.user.id, action: "LEAD_CONVERTED", entityType: "DebtCase", entityId: debtCase.id, metadata: { leadId: lead.id } } });
+    await transaction.lead.update({ where: { id: lead.id }, data: { status: "CONVERTED", convertedCaseId: debtCase.id, assignedToId: actor.id } });
+    await transaction.auditLog.create({ data: { actorId: actor.id, action: "LEAD_CONVERTED", entityType: "DebtCase", entityId: debtCase.id, metadata: { leadId: lead.id } } });
     return debtCase;
   }, { maxWait: 10_000, timeout: 20_000 });
   revalidatePath("/admin/leads");
@@ -186,11 +194,26 @@ const operationsSchema = z.object({
   }
 });
 
+function calendarDate(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+async function getAdminActor(session: Session | null) {
+  if (!session?.user) return null;
+  const select = { id: true, role: true } as const;
+  const byId = session.user.id ? await prisma.user.findUnique({ where: { id: session.user.id }, select }) : null;
+  if (byId && ["ADVOCATE", "SUPER_ADMIN"].includes(byId.role)) return byId;
+  if (!session.user.email) return null;
+  return prisma.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select });
+}
+
 export async function updateCaseOperations(input: unknown) {
   const session = await auth();
-  if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Admin access required");
+  const actor = await getAdminActor(session);
+  if (!actor || !["ADVOCATE", "SUPER_ADMIN"].includes(actor.role)) throw new Error("Admin access required");
+  const actorId = actor.id;
   const data = operationsSchema.parse(input);
-  const item = await prisma.debtCase.findUnique({ where: { id: data.caseId }, include: { invoices: { include: { installments: true }, take: 1 } } });
+  const item = await prisma.debtCase.findUnique({ where: { id: data.caseId }, include: { invoices: { include: { installments: { orderBy: { dueDate: "asc" } } }, take: 1 } } });
   if (!item) throw new Error("Case not found");
   await prisma.$transaction(async (transaction) => {
     await transaction.debtCase.update({ where: { id: item.id }, data: { status: data.status, feeAmount: data.feeAmount } });
@@ -198,7 +221,7 @@ export async function updateCaseOperations(input: unknown) {
     const planChanged = invoice.installments.length !== data.installmentCount ||
       invoice.installments.some((installment, index) =>
         Math.abs(installment.percentage - (data.installmentPercentages[index] ?? 0)) > 0.01 ||
-        installment.dueDate.getTime() !== (data.installmentDueDates[index]?.getTime() ?? 0),
+        calendarDate(installment.dueDate) !== calendarDate(data.installmentDueDates[index]),
       );
     if (planChanged && invoice.installments.some((installment) => installment.status === "PAID")) {
       throw new Error("Paid installments cannot be changed. Update the remaining plan after resolving paid installments.");
@@ -223,16 +246,19 @@ export async function updateCaseOperations(input: unknown) {
         } : undefined,
       },
     });
-    if (data.clientUpdate) await transaction.caseNote.create({ data: { caseId: item.id, authorId: session.user.id, content: data.clientUpdate, isInternalOnly: false } });
-    await transaction.auditLog.create({ data: { actorId: session.user.id, action: "CASE_UPDATED", entityType: "DebtCase", entityId: item.id, metadata: { status: data.status, feeAmount: data.feeAmount, totalPaid: data.totalPaid, installmentPercentages: data.installmentPercentages } } });
+    if (data.clientUpdate) await transaction.caseNote.create({ data: { caseId: item.id, authorId: actorId, content: data.clientUpdate, isInternalOnly: false } });
+    await transaction.auditLog.create({ data: { actorId, action: "CASE_UPDATED", entityType: "DebtCase", entityId: item.id, metadata: { status: data.status, feeAmount: data.feeAmount, totalPaid: data.totalPaid, installmentPercentages: data.installmentPercentages } } });
   }, { maxWait: 10_000, timeout: 20_000 });
   revalidatePath(`/admin/cases/${item.caseNumber ?? item.id}`);
   revalidatePath("/dashboard");
+  await invalidateCache(ADMIN_CASE_QUEUE_CACHE_KEY);
 }
 
 export async function markInstallmentPaid(installmentId: string) {
   const session = await auth();
-  if (!session?.user?.id || !["ADVOCATE", "SUPER_ADMIN"].includes(session.user.role)) throw new Error("Admin access required");
+  const actor = await getAdminActor(session);
+  if (!actor || !["ADVOCATE", "SUPER_ADMIN"].includes(actor.role)) throw new Error("Admin access required");
+  const actorId = actor.id;
   const parsedId = z.string().cuid().safeParse(installmentId);
   if (!parsedId.success) throw new Error("Invalid installment");
 
@@ -258,7 +284,7 @@ export async function markInstallmentPaid(installmentId: string) {
     });
     await transaction.auditLog.create({
       data: {
-        actorId: session.user.id,
+        actorId,
         action: "INSTALLMENT_MARKED_PAID",
         entityType: "Installment",
         entityId: installment.id,
@@ -269,6 +295,7 @@ export async function markInstallmentPaid(installmentId: string) {
 
   revalidatePath(`/admin/cases/${installment.invoice.debtCase?.caseNumber ?? installment.invoice.debtCase?.id ?? ""}`);
   revalidatePath("/dashboard");
+  await invalidateCache(ADMIN_CASE_QUEUE_CACHE_KEY);
 }
 
 export async function regenerateClientPassword(caseId: string) {

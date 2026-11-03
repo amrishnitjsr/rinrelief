@@ -64,7 +64,7 @@ function ResetForm() {
             </label>
             {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{message} <Link href="/login" className="font-bold underline">Sign in</Link></p>}
             {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-            <Button type="submit" disabled={loading || !token || Boolean(message)} className="w-full">{loading ? "Updating password..." : "Update password"} <ArrowRight size={16} /></Button>
+            <Button type="submit" loading={loading} disabled={!token || Boolean(message)} loadingText="Updating password..." className="w-full">Update password <ArrowRight size={16} /></Button>
           </form>
         </Card>
       </div>

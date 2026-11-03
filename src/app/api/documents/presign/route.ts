@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createUploadUrl } from "@/lib/storage";
 import { createDocumentSchema } from "@/lib/validation";
+import { invalidateCache } from "@/lib/redis";
+import { ADMIN_CASE_QUEUE_CACHE_KEY } from "@/lib/cache-keys";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -18,5 +20,17 @@ export async function POST(request: Request) {
   const storageKey = `cases/${caseId}/${crypto.randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const uploadUrl = await createUploadUrl(storageKey, fileMimeType);
   const document = await prisma.caseDocument.create({ data: { caseId, category, fileName, fileMimeType, fileSize, storageKey, title, referenceNo, isClientVisible } });
+  await invalidateCache(ADMIN_CASE_QUEUE_CACHE_KEY);
+  if (session.user.role !== "CLIENT") {
+    await prisma.auditLog.create({
+      data: {
+        actorId: session.user.id,
+        action: "DOCUMENT_UPLOADED",
+        entityType: "CaseDocument",
+        entityId: document.id,
+        metadata: { caseId, fileName, category, fileSize },
+      },
+    });
+  }
   return NextResponse.json({ documentId: document.id, storageKey, uploadUrl }, { status: 201 });
 }

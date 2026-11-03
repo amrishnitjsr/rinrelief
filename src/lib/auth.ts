@@ -41,13 +41,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? "";
-        session.user.phone = typeof token.phone === "string" ? token.phone : undefined;
-        if (!session.user.phone && token.sub) {
-          const user = await prisma.user.findUnique({ where: { id: token.sub }, select: { phone: true } });
-          session.user.phone = user?.phone;
+        if (token.sub || session.user.email) {
+          const userById = token.sub
+            ? await prisma.user.findUnique({ where: { id: token.sub }, select: { id: true, phone: true, role: true, mustChangePassword: true } })
+            : null;
+          const user = userById ?? (session.user.email
+            ? await prisma.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true, phone: true, role: true, mustChangePassword: true } })
+            : null);
+          if (user) session.user.id = user.id;
+          session.user.phone = user?.phone ?? (typeof token.phone === "string" ? token.phone : undefined);
+          session.user.role = user?.role ?? token.role as "SUPER_ADMIN" | "ADVOCATE" | "CLIENT";
+          session.user.mustChangePassword = user?.mustChangePassword ?? token.mustChangePassword === true;
+        } else {
+          session.user.phone = typeof token.phone === "string" ? token.phone : undefined;
+          session.user.role = token.role as "SUPER_ADMIN" | "ADVOCATE" | "CLIENT";
+          session.user.mustChangePassword = token.mustChangePassword === true;
         }
-        session.user.role = token.role as "SUPER_ADMIN" | "ADVOCATE" | "CLIENT";
-        session.user.mustChangePassword = token.mustChangePassword === true;
       }
       return session;
     },
