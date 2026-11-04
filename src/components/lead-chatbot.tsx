@@ -59,7 +59,7 @@ export function LeadChatbot() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="fixed bottom-5 right-20 z-40 inline-flex max-w-[calc(100vw-8rem)] items-center gap-2 rounded-full bg-espresso px-5 py-3 text-sm font-bold text-white shadow-xl transition-transform duration-100 active:scale-95 hover:bg-[#4a3d33] sm:right-24" aria-label="Open legal inquiry chat">
+      <button onClick={() => setOpen(true)} className="fixed bottom-5 left-4 right-20 z-40 inline-flex justify-center gap-2 rounded-full bg-espresso px-4 py-3 text-sm font-bold text-white shadow-xl transition-transform duration-100 active:scale-95 hover:bg-[#4a3d33] sm:left-auto sm:right-24 sm:px-5" aria-label="Open legal inquiry chat">
         <MessageCircle size={18} /> Talk to a case manager
       </button>
       {open && (

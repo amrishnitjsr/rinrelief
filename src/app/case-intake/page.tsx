@@ -236,18 +236,18 @@ export default function CaseIntake() {
             Takes about 4 minutes. Your information is encrypted and reviewed only by our legal team.
           </p>
         </div>
-        <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between">
+        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-1 sm:mt-10 sm:gap-2">
           {steps.map((label, index) => (
-            <div key={label} className="flex items-center gap-2">
-              <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-bold ${index < step ? "bg-emerald-600 text-white" : index === step ? "bg-navy text-white" : "bg-slate-200 text-slate-500"}`}>
+            <div key={label} className="flex min-w-0 flex-1 items-start gap-1 sm:gap-2">
+              <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold sm:h-9 sm:w-9 sm:text-sm ${index < step ? "bg-emerald-600 text-white" : index === step ? "bg-navy text-white" : "bg-slate-200 text-slate-500"}`}>
                 {index < step ? <Check size={16} /> : index + 1}
               </div>
-              <span className="hidden text-xs font-semibold text-slate-600 sm:block">{label}</span>
-              {index < 3 && <div className={`hidden h-px w-8 sm:block md:w-20 ${index < step ? "bg-emerald-500" : "bg-slate-200"}`} />}
+              <span className="max-w-20 text-[10px] font-semibold leading-4 text-slate-600 sm:max-w-none sm:text-xs">{label}</span>
+              {index < steps.length - 1 && <div className={`mt-4 h-px min-w-3 flex-1 sm:min-w-5 ${index < step ? "bg-emerald-500" : "bg-slate-200"}`} />}
             </div>
           ))}
         </div>
-        <Card className="mx-auto mt-10 max-w-3xl p-6 sm:p-9">
+        <Card className="mx-auto mt-7 max-w-3xl p-4 sm:mt-10 sm:p-9">
           <form onSubmit={handleSubmit(submitCase)}>
             <AnimatePresence mode="wait">
               {step === 0 && (

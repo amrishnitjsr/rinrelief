@@ -128,7 +128,7 @@ export default function Home() {
               <p className="mb-7 flex items-center gap-3 text-xs font-bold uppercase tracking-[.22em] text-[#9a7413]">
                 <span className="h-px w-8 bg-gold" /> Confidential legal consultancy
               </p>
-              <h1 className="max-w-4xl text-6xl font-black leading-[.94] tracking-[-.065em] text-espresso sm:text-8xl">
+              <h1 className="max-w-4xl text-5xl font-black leading-[.94] tracking-[-.065em] text-espresso sm:text-7xl lg:text-8xl">
                 A calmer way to face <span className="text-[#b18a20]">legal problems.</span>
               </h1>
               <p className="mt-8 max-w-xl text-lg leading-8 text-espresso/65">
@@ -180,15 +180,15 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div><p className="text-xs font-bold uppercase tracking-[.22em] text-[#9a7413]">What we do</p><h2 className="mt-4 max-w-2xl text-5xl font-black leading-none tracking-[-.06em] text-espresso sm:text-7xl">A plan for every difficult call.</h2></div>
-              <div className="flex items-center gap-4 pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-espresso/45">Services {serviceIndex + 1}–{Math.min(serviceIndex + 3, protections.length)} of {protections.length}</span>
+              <div className="flex w-full items-center justify-between gap-3 pb-2 sm:w-auto sm:justify-end">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-espresso/45 sm:text-xs">Services {serviceIndex + 1}–{Math.min(serviceIndex + 3, protections.length)} of {protections.length}</span>
                 <button type="button" aria-label="Previous services" onClick={changeServices((serviceIndex - 3 + protections.length) % protections.length)} className="grid h-9 w-9 place-items-center rounded-full border border-espresso/20 text-espresso transition hover:border-gold hover:bg-white"><ChevronLeft size={16} /></button>
                 <button type="button" aria-label="Next services" onClick={changeServices((serviceIndex + 3) % protections.length)} className="grid h-9 w-9 place-items-center rounded-full border border-espresso/20 text-espresso transition hover:border-gold hover:bg-white"><ChevronRight size={16} /></button>
               </div>
             </div>
             <div className="mt-14">
               <div className="grid gap-x-4 gap-y-12 md:grid-cols-3">
-                {visibleServices.map(([number, title, description, Icon]) => <article key={`${number}-${title}`} className="group border-t border-espresso/20 pt-5"><div className="flex items-center justify-between text-xs font-bold text-espresso/45"><span>{number as string}</span><Icon size={19} className="text-[#9a7413]" /></div><h3 className="mt-10 text-3xl font-black tracking-[-.04em] text-espresso">{title as string}</h3><p className="mt-4 min-h-20 text-sm leading-6 text-espresso/60">{description as string}</p><button type="button" onClick={() => setSelectedService(title as string)} className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-espresso">Learn more <ChevronRight size={15} className="transition group-hover:translate-x-1" /></button></article>)}
+                {visibleServices.map(([number, title, description, Icon]) => <article key={`${number}-${title}`} className="group border-t border-espresso/20 pt-5"><div className="flex items-center justify-between text-xs font-bold text-espresso/45"><span>{number as string}</span><Icon size={19} className="text-[#9a7413]" /></div><h3 className="mt-7 text-2xl font-black tracking-[-.04em] text-espresso sm:mt-10 sm:text-3xl">{title as string}</h3><p className="mt-3 min-h-20 text-sm leading-6 text-espresso/60 sm:mt-4">{description as string}</p><button type="button" onClick={() => setSelectedService(title as string)} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-espresso sm:mt-7">Learn more <ChevronRight size={15} className="transition group-hover:translate-x-1" /></button></article>)}
               </div>
               <div className="mt-10 flex items-center justify-between border-t border-espresso/15 pt-5">
                 <div className="flex gap-1.5" aria-label="Service slides">{Array.from({ length: Math.ceil(protections.length / 3) }, (_, index) => <button key={index} type="button" aria-label={`Show services ${index * 3 + 1} to ${Math.min(index * 3 + 3, protections.length)}`} onClick={changeServices(index * 3)} className={`h-1.5 rounded-full transition-all ${Math.floor(serviceIndex / 3) === index ? "w-8 bg-gold" : "w-3 bg-espresso/20"}`} />)}</div>
@@ -199,7 +199,7 @@ export default function Home() {
         </section>
         {selectedService && serviceGuides[selectedService] && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-espresso/45 p-4" role="dialog" aria-modal="true" aria-labelledby="service-guide-title">
-            <Card className="w-full max-w-xl overflow-hidden bg-white shadow-2xl">
+            <Card className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto bg-white shadow-2xl">
               <div className="flex items-start justify-between border-b border-slate-100 p-6 sm:p-7">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[.2em] text-[#9a7413]">Service guide</p>
@@ -249,7 +249,7 @@ export default function Home() {
         </div>
         <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-5 text-xs text-white/40">© {new Date().getFullYear()} Rinrelife. Information is for general guidance and does not guarantee an outcome.</div>
       </footer>
-      <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-3"><a href="tel:+919876543210" className="grid h-12 w-12 place-items-center rounded-full bg-red-600 text-white shadow-lg" aria-label="Emergency helpline"><PhoneCall size={20} /></a><a href="https://wa.me/919876543210" className="grid h-12 w-12 place-items-center rounded-full bg-emerald-600 text-white shadow-lg" aria-label="WhatsApp support"><MessageCircle size={21} /></a></div>
+      <div className="fixed bottom-5 right-3 z-40 flex flex-col gap-2 sm:right-5 sm:gap-3"><a href="tel:+919876543210" className="grid h-11 w-11 place-items-center rounded-full bg-red-600 text-white shadow-lg sm:h-12 sm:w-12" aria-label="Emergency helpline"><PhoneCall size={19} /></a><a href="https://wa.me/919876543210" className="grid h-11 w-11 place-items-center rounded-full bg-emerald-600 text-white shadow-lg sm:h-12 sm:w-12" aria-label="WhatsApp support"><MessageCircle size={20} /></a></div>
       <LeadChatbot />
     </>
   );

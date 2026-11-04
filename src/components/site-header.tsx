@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ChevronDown, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, ShieldCheck, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const isClient = session?.user?.role === "CLIENT";
   return (
     <header className="absolute inset-x-0 top-0 z-30 px-4 pt-5 sm:px-8 lg:px-12">
@@ -33,8 +34,21 @@ export function SiteHeader() {
             Talk to us <ArrowRight size={15} />
           </Link>
           {!isClient && <Link href="/login?role=client" aria-label="Client login" className="rounded-full border border-white/30 px-3 py-2 text-xs font-bold text-white sm:hidden">Login</Link>}
+          <button type="button" onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-full border border-white/30 text-white lg:hidden" aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={menuOpen}>
+            {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </div>
+      {menuOpen && <nav className="mx-auto mt-2 grid max-w-7xl gap-1 rounded-2xl bg-espresso p-3 text-sm font-semibold text-white shadow-xl lg:hidden">
+        {[
+          ["Home", "/"],
+          ["About us", "/#about"],
+          ["Services", "/#protections"],
+          ["How it works", "/#process"],
+          ["Track case", "/dashboard"],
+          ["Talk to us", "/#contact"],
+        ].map(([label, href]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 hover:bg-white/10">{label}</Link>)}
+      </nav>}
     </header>
   );
 }
