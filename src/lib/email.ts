@@ -4,6 +4,10 @@ import { env } from "@/env.mjs";
 const resend = new Resend(env.RESEND_API_KEY);
 
 export async function notifyAdminOfNewCase(input: { id: string; clientName: string; lender: string; phone: string }) {
+  if (env.RESEND_API_KEY.startsWith("re_local_") || env.RESEND_API_KEY === "replace-with-resend-api-key") {
+    console.warn("Admin case email skipped because RESEND_API_KEY is not configured.");
+    return;
+  }
   const { error } = await resend.emails.send({
     from: "Rinrelife Alerts <alerts@nyayashield.in>",
     to: env.ADMIN_NOTIFICATION_EMAIL,

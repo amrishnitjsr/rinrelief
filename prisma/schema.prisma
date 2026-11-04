@@ -21,6 +21,20 @@ enum LoanType {
   HOME_OR_AUTO_LOAN
 }
 
+enum LegalMatterType {
+  DEBT_SETTLEMENT
+  BANKING
+  CIVIL_DISPUTE
+  CONSUMER
+  FAMILY
+  CRIMINAL
+  PROPERTY
+  EMPLOYMENT
+  BUSINESS
+  CYBERCRIME
+  OTHER
+}
+
 enum HarassmentType {
   ABUSIVE_CALLS
   HOME_OFFICE_VISITS
@@ -94,8 +108,23 @@ model User {
   invoices      Invoice[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  queries       ClientQuery[]
 
   @@index([email])
+}
+
+model ClientQuery {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String   @db.Text
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId, createdAt])
+  @@index([status, createdAt])
 }
 
 model DebtCase {
@@ -105,11 +134,14 @@ model DebtCase {
   clientEmail         String
   clientPhone         String
   city                String
-  bankOrLenderName    String
-  loanType            LoanType
-  totalOutstanding    Float
+  matterType          LegalMatterType @default(DEBT_SETTLEMENT)
+  matterSummary       String?         @db.Text
+  matterDetails       Json?
+  bankOrLenderName    String?
+  loanType            LoanType?
+  totalOutstanding    Float?
   principalAmount     Float?
-  overdueDurationDays Int
+  overdueDurationDays Int             @default(0)
   settlementBudget    Float?
   facingHarassment    Boolean         @default(false)
   harassmentType      HarassmentType?
@@ -285,4 +317,18 @@ model PaymentTransaction {
 
   @@index([razorpayOrderId])
   @@index([status, createdAt])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  name      String
+  city      String
+  rating    Int
+  message   String   @db.Text
+  approved  Boolean  @default(false)
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([approved, createdAt])
 }

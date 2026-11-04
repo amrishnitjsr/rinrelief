@@ -40,7 +40,7 @@ export async function createDebtCase(input: unknown) {
     },
   });
   try {
-    await notifyAdminOfNewCase({ id: debtCase.caseNumber ?? debtCase.id, clientName: debtCase.clientName, lender: debtCase.bankOrLenderName, phone: debtCase.clientPhone });
+    await notifyAdminOfNewCase({ id: debtCase.caseNumber ?? debtCase.id, clientName: debtCase.clientName, lender: debtCase.bankOrLenderName ?? "General legal matter", phone: debtCase.clientPhone });
   } catch (error) {
     console.error("case notification failed", { caseId: debtCase.id, error });
   }

@@ -3,12 +3,20 @@
 import { FormEvent, useState } from "react";
 import { ArrowRight, Check, MessageCircle, X } from "lucide-react";
 import { Button, Card, Field } from "@/components/ui";
+import { formatLeadWhatsAppMessage, openAdminWhatsApp } from "@/lib/whatsapp";
 
 const categories = [
   ["DEBT_SETTLEMENT", "Debt settlement"],
   ["BANKING", "Banking"],
-  ["CIVIL", "Civil"],
+  ["CIVIL_DISPUTE", "Civil dispute"],
   ["CONSUMER", "Consumer"],
+  ["FAMILY", "Family matter"],
+  ["CRIMINAL", "Criminal matter"],
+  ["PROPERTY", "Property"],
+  ["EMPLOYMENT", "Employment"],
+  ["BUSINESS", "Business"],
+  ["CYBERCRIME", "Cybercrime"],
+  ["OTHER", "Other legal matter"],
 ] as const;
 
 export function LeadChatbot() {
@@ -28,11 +36,19 @@ export function LeadChatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(Object.fromEntries(form.entries())),
       });
-      const result = (await response.json()) as { referenceNo?: string; error?: string };
-      if (!response.ok || !result.referenceNo) {
+      const result = (await response.json()) as { id?: string; referenceNo?: string; error?: string };
+      if (!response.ok || !result.id || !result.referenceNo) {
         setError(result.error ?? "We could not submit your inquiry.");
         return;
       }
+      openAdminWhatsApp(formatLeadWhatsAppMessage({
+        id: result.id,
+        referenceNo: result.referenceNo,
+        name: String(form.get("name") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        category: String(form.get("category") ?? ""),
+        issueSummary: String(form.get("issueSummary") ?? ""),
+      }));
       setSubmitted(result.referenceNo);
     } catch {
       setError("We could not submit your inquiry. Please try again.");
@@ -43,7 +59,7 @@ export function LeadChatbot() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-espresso px-5 py-3 text-sm font-bold text-white shadow-xl transition-transform duration-100 active:scale-95 hover:bg-[#4a3d33]" aria-label="Open legal inquiry chat">
+      <button onClick={() => setOpen(true)} className="fixed bottom-5 right-20 z-40 inline-flex max-w-[calc(100vw-8rem)] items-center gap-2 rounded-full bg-espresso px-5 py-3 text-sm font-bold text-white shadow-xl transition-transform duration-100 active:scale-95 hover:bg-[#4a3d33] sm:right-24" aria-label="Open legal inquiry chat">
         <MessageCircle size={18} /> Talk to a case manager
       </button>
       {open && (

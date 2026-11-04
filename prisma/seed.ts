@@ -16,6 +16,14 @@ async function main() {
     create: { name, email, phone, passwordHash, role: Role.SUPER_ADMIN },
   });
   console.log(`Admin account ready: ${user.email}`);
+  await prisma.feedback.deleteMany({ where: { isDemo: true } });
+  await prisma.feedback.createMany({
+    data: [
+      { name: "Ananya Mehta", city: "Pune", rating: 5, message: "The team helped me understand my options and respond calmly to recovery calls.", approved: true, isDemo: true },
+      { name: "Rahul Verma", city: "Jaipur", rating: 5, message: "Clear communication and a practical plan made a difficult situation feel manageable.", approved: true, isDemo: true },
+      { name: "Priya Nair", city: "Bengaluru", rating: 4, message: "I appreciated the structured guidance and regular updates throughout my consultation.", approved: true, isDemo: true },
+    ],
+  });
 }
 
 main().catch((error) => {

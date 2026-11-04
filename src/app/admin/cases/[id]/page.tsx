@@ -48,7 +48,7 @@ export default async function CaseWorkspace({ params }: { params: Promise<{ id: 
                 {item.facingHarassment ? "Active harassment" : item.receivedLegalNotice ? "Legal notice" : "Standard triage"}
               </Badge>
             </div>
-            <p className="mt-2 text-sm text-white/70">{item.clientName} · {item.bankOrLenderName}</p>
+            <p className="mt-2 text-sm text-white/70">{item.clientName} · {item.bankOrLenderName ?? "General legal matter"}</p>
             <p className="mt-1 text-xs text-white/50">Opened {item.createdAt.toLocaleString("en-IN")}</p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-xs sm:gap-4">
@@ -62,13 +62,13 @@ export default async function CaseWorkspace({ params }: { params: Promise<{ id: 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(240px,.85fr)_minmax(360px,1.2fr)]">
         <div className="space-y-5">
           <Card className="p-4 sm:p-5">
-            <SectionTitle title="Borrower & debt summary" />
+            <SectionTitle title="Client & matter summary" />
             <div className="mt-4 grid grid-cols-2 gap-3">
               {[
-                ["Borrower", item.clientName], ["Phone", item.clientPhone], ["City", item.city],
-                ["Loan type", item.loanType.replaceAll("_", " ")], ["Total claimed", `₹${item.totalOutstanding.toLocaleString("en-IN")}`],
+                ["Client", item.clientName], ["Phone", item.clientPhone], ["City", item.city],
+                ["Matter type", item.matterType.replaceAll("_", " ")], ["Matter summary", item.matterSummary || "Not provided"], ["Loan type", item.loanType?.replaceAll("_", " ") || "Not applicable"], ["Total claimed", item.totalOutstanding != null ? `₹${item.totalOutstanding.toLocaleString("en-IN")}` : "Not applicable"],
                 ["Principal", item.principalAmount ? `₹${item.principalAmount.toLocaleString("en-IN")}` : "Not provided"],
-                ["Days overdue", `${item.overdueDurationDays} days`], ["Settlement budget", item.settlementBudget ? `₹${item.settlementBudget.toLocaleString("en-IN")}` : "Not provided"],
+                ["Days overdue", item.overdueDurationDays ? `${item.overdueDurationDays} days` : "Not applicable"], ["Settlement budget", item.settlementBudget ? `₹${item.settlementBudget.toLocaleString("en-IN")}` : "Not provided"],
               ].map(([label, value]) => <div key={label} className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{label}</p><b className="mt-1 block break-words text-sm text-navy">{value}</b></div>)}
             </div>
           </Card>

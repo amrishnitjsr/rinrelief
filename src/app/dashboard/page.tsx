@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, Clock3, FileText, ShieldCheck } from "lucide-react";
+import { Check, Clock3, FileText, ShieldCheck, Sparkles, UploadCloud } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge, Button, Card } from "@/components/ui";
 import { SiteHeader } from "@/components/site-header";
+import ClientSupport from "./client-support";
 
 const stages = [
   ["INQUIRY_RECEIVED", "Inquiry received"],
@@ -47,6 +48,14 @@ export default async function ClientDashboard() {
       invoices: { include: { installments: { orderBy: { dueDate: "asc" } } }, orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
+  const queries = await prisma.clientQuery.findMany({
+      where: { clientId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: { id: true, subject: true, message: true, status: true, createdAt: true },
+  });
+  const activeCases = cases.filter((item) => item.status !== "CLOSED").length;
+  const openInstallments = cases.reduce((total, item) => total + (item.invoices[0]?.installments.filter((installment) => installment.status !== "PAID").length ?? 0), 0);
 
   return (
     <>
@@ -118,6 +127,12 @@ export default async function ClientDashboard() {
           })}
         </div>
       )}
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <Summary icon={<Sparkles size={16} />} label="Active cases" value={String(activeCases)} />
+        <Summary icon={<UploadCloud size={16} />} label="Visible documents" value={String(cases.reduce((total, item) => total + item.evidenceFiles.length, 0))} />
+        <Summary icon={<Clock3 size={16} />} label="Upcoming installments" value={String(openInstallments)} />
+      </div>
+      <ClientSupport queries={queries.map((query) => ({ ...query, createdAt: query.createdAt.toISOString() }))} />
     </main>
     </>
   );
