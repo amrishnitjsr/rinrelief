@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  MessageSquareText,
   LayoutDashboard,
   LogOut,
   MessageCircle,
@@ -43,7 +44,7 @@ export default function AdminShell({ children, isSuperAdmin, priorityCaseCount }
           </button>
         </div>
         <nav className="space-y-1 p-3">
-          {([[LayoutDashboard, "Case queue", "/admin/cases"], [MessageCircle, "Lead queue", "/admin/leads"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "/admin/cases"], [CreditCard, "Payment ledger", "/admin/payments"], ...(isSuperAdmin ? [[Settings, "Settings", "/admin/settings"]] : [])] as [React.ElementType, string, string][]).map(([Icon, label, href]) => {
+          {([[LayoutDashboard, "Case queue", "/admin/cases"], [MessageCircle, "Lead queue", "/admin/leads"], [MessageSquareText, "Feedback", "/admin/feedback"], [ShieldAlert, "Priority harassment", "/admin/cases?priority=high"], [Users, "Lender aggregator", "/admin/cases"], [CreditCard, "Payment ledger", "/admin/payments"], ...(isSuperAdmin ? [[Settings, "Settings", "/admin/settings"]] : [])] as [React.ElementType, string, string][]).map(([Icon, label, href]) => {
             const active = label === "Case queue" ? pathname === "/admin/cases" : href !== "/admin/cases" && pathname.startsWith(href);
             return <Link href={href} onClick={() => setMobileOpen(false)} key={label} aria-current={active ? "page" : undefined} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${active ? "bg-white/15 text-white ring-1 ring-white/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
               <Icon size={18} />{!collapsed && label}

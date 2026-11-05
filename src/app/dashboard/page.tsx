@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge, Button, Card } from "@/components/ui";
 import { SiteHeader } from "@/components/site-header";
 import ClientSupport from "./client-support";
+import ClientFeedback from "./client-feedback";
 
 const stages = [
   ["INQUIRY_RECEIVED", "Inquiry received"],
@@ -53,6 +54,12 @@ export default async function ClientDashboard() {
       orderBy: { createdAt: "desc" },
       take: 10,
       select: { id: true, subject: true, message: true, status: true, createdAt: true },
+  });
+  const feedback = await prisma.feedback.findMany({
+    where: { clientId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { rating: true, message: true, approved: true },
   });
   const activeCases = cases.filter((item) => item.status !== "CLOSED").length;
   const openInstallments = cases.reduce((total, item) => total + (item.invoices[0]?.installments.filter((installment) => installment.status !== "PAID").length ?? 0), 0);
@@ -133,6 +140,7 @@ export default async function ClientDashboard() {
         <Summary icon={<Clock3 size={16} />} label="Upcoming installments" value={String(openInstallments)} />
       </div>
       <ClientSupport queries={queries.map((query) => ({ ...query, createdAt: query.createdAt.toISOString() }))} />
+      <ClientFeedback existing={feedback} />
     </main>
     </>
   );

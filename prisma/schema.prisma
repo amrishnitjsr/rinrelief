@@ -109,6 +109,7 @@ model User {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   queries       ClientQuery[]
+  feedback      Feedback[]
 
   @@index([email])
 }
@@ -321,6 +322,8 @@ model PaymentTransaction {
 
 model Feedback {
   id        String   @id @default(cuid())
+  clientId  String?
+  client    User?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
   name      String
   city      String
   rating    Int
@@ -331,4 +334,5 @@ model Feedback {
   updatedAt DateTime @updatedAt
 
   @@index([approved, createdAt])
+  @@index([clientId, createdAt])
 }
