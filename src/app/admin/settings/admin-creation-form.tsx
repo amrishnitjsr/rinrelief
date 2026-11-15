@@ -5,6 +5,8 @@ import { Button, Field } from "@/components/ui";
 
 export default function AdminCreationForm() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationPending, setVerificationPending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -30,13 +32,31 @@ export default function AdminCreationForm() {
         setError(result.error ?? "Unable to create the admin account.");
         return;
       }
-      setForm({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
-      setSuccess(`Super admin account created for ${result.created.email}.`);
+      setSuccess(`Admin created. A verification code was sent to ${result.created.email}.`);
+      setVerificationCode("");
+      setVerificationPending(true);
+      setForm({ name: form.name, email: form.email, phone: form.phone, password: "", confirmPassword: "" });
     } catch {
       setError("Unable to reach the account service. Please try again.");
     } finally {
       setSubmitting(false);
     }
+
+  }
+
+  async function verify() {
+    setError(""); setSuccess(""); setSubmitting(true);
+    try {
+      const response = await fetch("/api/admin/admins/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.email, code: verificationCode }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Unable to verify the admin.");
+      setSuccess(`${form.email} is verified and can now sign in.`);
+      setVerificationPending(false);
+      setForm({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+      setVerificationCode("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to verify the admin.");
+    } finally { setSubmitting(false); }
   }
 
   return (
@@ -48,6 +68,7 @@ export default function AdminCreationForm() {
       <Field label="Confirm password" type="password" minLength={8} value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} required autoComplete="new-password" />
       {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
       {success && <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{success}</p>}
+      {verificationPending && <div className="grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p role="status" className="text-sm font-semibold text-emerald-700">{success}</p><Field label="Admin email verification code" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /><Button type="button" onClick={() => void verify()} loading={submitting} loadingText="Verifying...">Verify admin email</Button></div>}
       <div className="pt-2">
         <Button type="submit" loading={submitting} loadingText="Creating...">Create admin</Button>
       </div>

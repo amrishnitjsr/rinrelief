@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, UserPlus } from "lucide-react";
-import { Card } from "@/components/ui";
+import { Activity, KeyRound, UserPlus } from "lucide-react";
+import { Button, Card, Field } from "@/components/ui";
 import AdminCreationForm from "./admin-creation-form";
 
 type Admin = {
@@ -24,15 +24,20 @@ type ActivityEntry = {
 };
 
 export default function SettingsPanel({ admins, activity }: { admins: Admin[]; activity: ActivityEntry[] }) {
-  const [section, setSection] = useState<"create" | "activity" | null>(null);
+  const [section, setSection] = useState<"create" | "activity" | "password" | null>(null);
 
   return (
     <>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <button type="button" onClick={() => setSection(section === "create" ? null : "create")} className={`rounded-2xl border p-5 text-left shadow-soft transition-transform duration-100 active:scale-[.99] ${section === "create" ? "border-gold bg-[#fffdf4]" : "border-slate-200 bg-white hover:border-gold"}`}>
           <UserPlus className="text-gold" size={22} />
           <h2 className="mt-3 text-lg font-bold text-navy">Create admin</h2>
           <p className="mt-1 text-sm text-slate-500">Add an admin who can operate the portal without super-admin control.</p>
+        </button>
+        <button type="button" onClick={() => setSection(section === "password" ? null : "password")} className={`rounded-2xl border p-5 text-left shadow-soft transition-transform duration-100 active:scale-[.99] ${section === "password" ? "border-gold bg-[#fffdf4]" : "border-slate-200 bg-white hover:border-gold"}`}>
+          <KeyRound className="text-gold" size={22} />
+          <h2 className="mt-3 text-lg font-bold text-navy">Change password</h2>
+          <p className="mt-1 text-sm text-slate-500">Confirm a password change through your email.</p>
         </button>
         <button type="button" onClick={() => setSection(section === "activity" ? null : "activity")} className={`rounded-2xl border p-5 text-left shadow-soft transition-transform duration-100 active:scale-[.99] ${section === "activity" ? "border-gold bg-[#fffdf4]" : "border-slate-200 bg-white hover:border-gold"}`}>
           <Activity className="text-gold" size={22} />
@@ -48,6 +53,8 @@ export default function SettingsPanel({ admins, activity }: { admins: Admin[]; a
         </div>
         <AdminCreationForm />
       </Card>}
+
+      {section === "password" && <Card className="mt-6 max-w-2xl p-6"><PasswordChangeForm /></Card>}
 
       {section === "activity" && <div className="mt-6 space-y-6">
         <Card className="overflow-hidden">
@@ -87,6 +94,41 @@ export default function SettingsPanel({ admins, activity }: { admins: Admin[]; a
       </div>}
     </>
   );
+}
+
+function PasswordChangeForm() {
+  const [step, setStep] = useState<"request" | "verify">("request");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function requestCode() {
+    setLoading(true); setError(""); setMessage("");
+    try {
+      const response = await fetch("/api/admin/password/request", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Unable to send the code.");
+      setStep("verify"); setMessage("A verification code was sent to your admin email.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to send the code.");
+    } finally { setLoading(false); }
+  }
+
+  async function verify(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setLoading(true); setError(""); setMessage("");
+    try {
+      const response = await fetch("/api/admin/password/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, newPassword: password }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Unable to update your password.");
+      setMessage("Password updated successfully."); setCode(""); setPassword(""); setStep("request");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to update your password.");
+    } finally { setLoading(false); }
+  }
+
+  return <div><h2 className="text-xl font-bold text-navy">Change super admin password</h2><p className="mt-1 text-sm text-slate-500">We will send a one-time code to your current admin email before changing the password.</p>{step === "request" ? <Button type="button" className="mt-5" onClick={requestCode} loading={loading} loadingText="Sending code...">Email me a verification code</Button> : <form onSubmit={verify} className="mt-5 grid gap-4"><Field label="6-digit email code" value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /><Field label="New password" type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" required /><Button type="submit" loading={loading} loadingText="Updating...">Update password</Button></form>}{message && <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</p>}{error && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}</div>;
 }
 
 function formatAction(action: string) {

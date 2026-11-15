@@ -24,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const identifier = parsed.data.email.toLowerCase();
         const caseRecord = identifier.startsWith("case-") ? await prisma.debtCase.findUnique({ where: { caseNumber: identifier.toUpperCase() }, select: { clientEmail: true } }) : null;
         const user = await prisma.user.findUnique({ where: { email: (caseRecord?.clientEmail ?? identifier).toLowerCase() } });
-        if (!user?.passwordHash || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return null;
+        if (!user?.passwordHash || (user.role === "ADVOCATE" && !user.adminEmailVerifiedAt) || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return null;
         return { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, mustChangePassword: user.mustChangePassword };
       },
     }),

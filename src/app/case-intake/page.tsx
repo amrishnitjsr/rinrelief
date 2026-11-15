@@ -198,7 +198,7 @@ export default function CaseIntake() {
                 <a
                   href={`https://wa.me/919876543210?text=${encodeURIComponent(`Urgent callback request for case ${caseDetails.caseNumber}`)}`}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
                 >
                   <MessageCircle size={16} /> Request urgent call

@@ -46,7 +46,7 @@ const structuredData = {
       description:
         "Confidential legal guidance, debt settlement support, and case preparation across India.",
       telephone: "+91 98765 43210",
-      email: "alerts@nyayashield.in",
+      email: "alerts@info.rinrelief.com",
       address: {
         "@type": "PostalAddress",
         streetAddress: "B-149/5, Sharma Market, Pul Pehlad Pur",

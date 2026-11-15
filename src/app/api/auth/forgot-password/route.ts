@@ -8,10 +8,16 @@ import { prisma } from "@/lib/prisma";
 const requestSchema = z.object({ email: z.string().trim().email().max(320) });
 
 export async function POST(request: Request) {
-  const parsed = requestSchema.safeParse(await request.json());
   const response = NextResponse.json({
     message: "If an account exists for that email, we sent a password reset link.",
   });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return response;
+  }
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) return response;
 
   const email = parsed.data.email.toLowerCase();

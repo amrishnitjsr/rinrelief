@@ -13,6 +13,7 @@ export function openAdminWhatsApp(message: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+
 export function formatLeadWhatsAppMessage(input: {
   id: string;
   referenceNo: string;
@@ -33,6 +34,7 @@ export function formatLeadWhatsAppMessage(input: {
     cleanWhatsAppText(input.issueSummary),
   ]);
 }
+
 
 export function formatCaseWhatsAppMessage(input: {
   caseNumber: string;
