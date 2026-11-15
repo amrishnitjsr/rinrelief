@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { Button, Card } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function LoginPage() {
   return <Suspense fallback={<div className="grid min-h-screen place-items-center bg-navy text-white">Loading secure sign in...</div>}><LoginForm /></Suspense>;
@@ -45,8 +46,7 @@ function LoginForm() {
     <main className="min-h-screen bg-navy px-5 py-12">
       <div className="mx-auto max-w-md">
         <Link href="/" className="mx-auto flex w-fit items-center gap-2 text-white">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold text-navy"><ShieldCheck size={22} /></span>
-          <span className="serif text-2xl font-bold">Rinrelife</span>
+          <BrandLogo variant="light" className="h-14 w-44" priority />
         </Link>
         <Card className="mt-10 p-7 sm:p-9">
           <div className="text-center">

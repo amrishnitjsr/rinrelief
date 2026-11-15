@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function AdminShell({ children, isSuperAdmin, priorityCaseCount }: { children: React.ReactNode; isSuperAdmin: boolean; priorityCaseCount: number }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -36,8 +37,7 @@ export default function AdminShell({ children, isSuperAdmin, priorityCaseCount }
       <aside className={`fixed inset-y-0 left-0 z-40 border-r border-slate-200 bg-navy text-white transition-all lg:block ${mobileOpen ? "block w-72" : "hidden"} ${collapsed ? "lg:w-20" : "lg:w-64"}`}>
         <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
           <Link href="/" className="flex items-center gap-2">
-            {!collapsed && <span className="serif text-xl font-bold">Rinrelife</span>}
-            <ShieldAlert className="text-gold" />
+            <BrandLogo variant="light" className={collapsed ? "h-8 w-8" : "h-9 w-36"} />
           </Link>
           <button onClick={() => setCollapsed(!collapsed)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}>
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}

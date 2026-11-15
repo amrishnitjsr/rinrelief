@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { Button, Card } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -36,8 +37,7 @@ export default function ForgotPasswordPage() {
     <main className="min-h-screen bg-navy px-5 py-12">
       <div className="mx-auto max-w-md">
         <Link href="/" className="mx-auto flex w-fit items-center gap-2 text-white">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold text-navy"><ShieldCheck size={22} /></span>
-          <span className="serif text-2xl font-bold">Rinrelife</span>
+          <BrandLogo variant="light" className="h-14 w-44" priority />
         </Link>
         <Card className="mt-10 p-7 sm:p-9">
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-navy"><Mail size={21} /></div>

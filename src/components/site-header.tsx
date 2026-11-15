@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Menu, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -14,12 +15,7 @@ export function SiteHeader() {
     <header className="absolute inset-x-0 top-0 z-30 px-4 pt-5 sm:px-8 lg:px-12">
       <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full bg-espresso px-5 py-2.5 text-white shadow-xl shadow-black/10">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-espresso">
-            <ShieldCheck size={21} />
-          </span>
-          <span className="text-lg font-black tracking-tight">
-            Rinrelife
-          </span>
+          <BrandLogo variant="light" className="h-10 w-28" priority />
         </Link>
         <nav className="hidden items-center gap-8 text-sm font-medium text-white/80 lg:flex">
           <Link className="transition hover:text-white" href="/">Home</Link>
