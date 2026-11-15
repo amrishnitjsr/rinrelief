@@ -67,6 +67,7 @@ function LoginForm() {
             <Button type="submit" loading={loading} loadingText="Verifying..." className="w-full">{mode === "admin" ? "Open advocate workspace" : "Sign in"} <ArrowRight size={16} /></Button>
           </form>
           {mode === "client" && <Link href="/forgot-password" className="mt-5 block text-center text-sm font-bold text-navy underline">Forgot your password?</Link>}
+          {mode === "admin" && <Link href="/forgot-password?role=admin" className="mt-5 block text-center text-sm font-bold text-navy underline">Forgot your password?</Link>}
           {mode === "client" && <p className="mt-6 text-center text-sm text-slate-500">Client credentials are created by the admin after consultation. Please use the case ID or email and temporary password shared with you.</p>}
           {mode === "admin" && <p className="mt-6 text-center text-xs leading-5 text-slate-400">Admin accounts are created by the deployment owner. Do not share advocate credentials.</p>}
         </Card>

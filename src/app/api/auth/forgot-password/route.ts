@@ -1,15 +1,14 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { env } from "@/env.mjs";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { createOtp } from "@/lib/otp";
+import { sendVerificationCodeEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 const requestSchema = z.object({ email: z.string().trim().email().max(320) });
 
 export async function POST(request: Request) {
   const response = NextResponse.json({
-    message: "If an account exists for that email, we sent a password reset link.",
+    message: "If an eligible admin account exists for that email, we sent a verification code.",
   });
   let body: unknown;
   try {
@@ -21,20 +20,25 @@ export async function POST(request: Request) {
   if (!parsed.success) return response;
 
   const email = parsed.data.email.toLowerCase();
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user?.passwordHash) return response;
-
-  const token = crypto.randomBytes(32).toString("hex");
-  const resetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true, role: true, adminEmailVerifiedAt: true } });
+  if (!user || !["SUPER_ADMIN", "ADVOCATE"].includes(user.role) || (user.role === "ADVOCATE" && !user.adminEmailVerifiedAt)) return response;
+  const verification = createOtp();
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      resetTokenHash,
-      resetTokenExpiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      passwordResetCodeHash: verification.hash,
+      passwordResetCodeExpiresAt: verification.expiresAt,
     },
   });
-
-  const resetUrl = `${env.NEXTAUTH_URL}/reset-password?token=${token}`;
-  await sendPasswordResetEmail({ email, resetUrl });
+  try {
+    await sendVerificationCodeEmail({ email: user.email, code: verification.code, purpose: "password" });
+  } catch (error) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetCodeHash: null, passwordResetCodeExpiresAt: null },
+    });
+    console.error("password reset email failed", error);
+    return NextResponse.json({ error: "We could not send the verification code. Please try again shortly." }, { status: 502 });
+  }
   return response;
 }

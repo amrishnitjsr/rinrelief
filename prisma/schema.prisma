@@ -107,6 +107,8 @@ model User {
   adminEmailVerifiedAt            DateTime?
   passwordChangeCodeHash          String?
   passwordChangeCodeExpiresAt     DateTime?
+  passwordResetCodeHash           String?
+  passwordResetCodeExpiresAt      DateTime?
   casesAssigned                   DebtCase[]    @relation("AdvocateCases")
   createdNotes                    CaseNote[]
   assignedLeads                   Lead[]        @relation("AssignedLeads")

@@ -9,7 +9,7 @@ const schema = z.object({ code: z.string().regex(/^\d{6}$/), newPassword: z.stri
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Super admin access required." }, { status: 403 });
+  if (!session?.user?.role || !["SUPER_ADMIN", "ADVOCATE"].includes(session.user.role)) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Enter a 6-digit code and password of at least 8 characters." }, { status: 422 });
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });

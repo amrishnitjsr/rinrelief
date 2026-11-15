@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { BCIDisclaimerModal } from "@/components/compliance/BCIDisclaimerModal";
 import { AuthProvider } from "@/components/auth-provider";
+import { env } from "@/env.mjs";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
@@ -11,15 +12,20 @@ const verificationCode = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "YOUR_VERIF
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Debt Settlement & Legal Support | Rinrelife",
+  title: "RinRelief",
   description:
     "Get confidential debt settlement and legal support in India. Organise your case, respond to recovery harassment, and take your next step with confidence.",
   alternates: { canonical: "/" },
   verification: { google: verificationCode },
+  icons: {
+    icon: "/logos/rinrelife light.svg",
+    shortcut: "/logos/rinrelife light.svg",
+    apple: "/logos/rinrelife light.svg",
+  },
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: "Debt Settlement & Legal Support | Rinrelife",
+    title: "RinRelief",
     description:
       "Confidential legal guidance, debt settlement support, and case preparation for people facing difficult legal situations.",
     siteName: "Rinrelife",
@@ -27,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Debt Settlement & Legal Support | Rinrelife",
+    title: "RinRelief",
     description:
       "Confidential legal guidance, debt settlement support, and case preparation across India.",
     images: ["/logos/rinrelife dark.svg"],
@@ -45,7 +51,7 @@ const structuredData = {
       logo: `${siteUrl}/logos/rinrelife dark.svg`,
       description:
         "Confidential legal guidance, debt settlement support, and case preparation across India.",
-      telephone: "+91 98765 43210",
+      telephone: `+${env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE}`,
       email: "alerts@info.rinrelief.com",
       address: {
         "@type": "PostalAddress",

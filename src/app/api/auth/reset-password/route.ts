@@ -1,35 +1,43 @@
-import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { hashOtp } from "@/lib/otp";
 import { prisma } from "@/lib/prisma";
 
 const resetSchema = z.object({
-  token: z.string().regex(/^[a-f0-9]{64}$/),
+  email: z.string().trim().email().max(320),
+  code: z.string().regex(/^\d{6}$/),
   password: z.string().min(8).max(128),
 });
 
 export async function POST(request: Request) {
-  const parsed = resetSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Use a valid email, 6-digit code, and password of at least 8 characters." }, { status: 422 });
+  }
+  const parsed = resetSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Use a valid token and a password of at least 8 characters." }, { status: 422 });
+    return NextResponse.json({ error: "Use a valid email, 6-digit code, and password of at least 8 characters." }, { status: 422 });
   }
 
-  const resetTokenHash = crypto.createHash("sha256").update(parsed.data.token).digest("hex");
-  const user = await prisma.user.findFirst({
-    where: {
-      resetTokenHash,
-      resetTokenExpiresAt: { gt: new Date() },
-    },
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email.toLowerCase() },
+    select: { id: true, role: true, adminEmailVerifiedAt: true, passwordResetCodeHash: true, passwordResetCodeExpiresAt: true },
   });
-  if (!user) return NextResponse.json({ error: "This reset link is invalid or has expired." }, { status: 400 });
-
+  if (!user || !["SUPER_ADMIN", "ADVOCATE"].includes(user.role) || (user.role === "ADVOCATE" && !user.adminEmailVerifiedAt) || !user.passwordResetCodeExpiresAt || user.passwordResetCodeExpiresAt < new Date() || user.passwordResetCodeHash !== hashOtp(parsed.data.code)) {
+    return NextResponse.json({ error: "This verification code is invalid or expired." }, { status: 400 });
+  }
   await prisma.user.update({
     where: { id: user.id },
     data: {
       passwordHash: await bcrypt.hash(parsed.data.password, 12),
+      passwordResetCodeHash: null,
+      passwordResetCodeExpiresAt: null,
       resetTokenHash: null,
       resetTokenExpiresAt: null,
+      mustChangePassword: false,
     },
   });
   return NextResponse.json({ reset: true });

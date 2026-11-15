@@ -1,4 +1,4 @@
-const adminWhatsAppPhone = (process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE ?? "919876543210").replace(/\D/g, "");
+import { adminWhatsAppPhone } from "@/lib/contact";
 
 function cleanWhatsAppText(value: string) {
   return value.replace(/\*/g, "").replace(/\s+/g, " ").trim();

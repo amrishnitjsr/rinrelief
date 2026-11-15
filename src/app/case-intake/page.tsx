@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   UploadCloud,
 } from "lucide-react";
+import { adminPhoneDisplay, adminWhatsAppPhone, adminWhatsAppUrl } from "@/lib/contact";
 import { Badge, Button, Card, Field } from "@/components/ui";
 import { SiteHeader } from "@/components/site-header";
 import { formatCaseWhatsAppMessage, openAdminWhatsApp } from "@/lib/whatsapp";
@@ -196,7 +197,7 @@ export default function CaseIntake() {
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <a
-                  href={`https://wa.me/919876543210?text=${encodeURIComponent(`Urgent callback request for case ${caseDetails.caseNumber}`)}`}
+                  href={`${adminWhatsAppUrl}?text=${encodeURIComponent(`Urgent callback request for case ${caseDetails.caseNumber}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
@@ -204,7 +205,7 @@ export default function CaseIntake() {
                   <MessageCircle size={16} /> Request urgent call
                 </a>
                 <a
-                  href="tel:+919876543210"
+                  href={`tel:+${adminWhatsAppPhone}`}
                   className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-bold text-red-700 transition hover:bg-red-50"
                 >
                   <PhoneCall size={16} /> Call urgently
@@ -338,7 +339,7 @@ export default function CaseIntake() {
                   <StepTitle title="Where should we reach you?" subtitle="A senior case manager will call after reviewing your case details." />
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Borrower name" placeholder="Full legal name" {...register("name", { required: true })} />
-                    <Field label="Mobile number" placeholder="+91 98765 43210" {...register("mobile", { required: true })} />
+                    <Field label="Mobile number" placeholder={adminPhoneDisplay} {...register("mobile", { required: true })} />
                     <Field label="City" placeholder="e.g. Mumbai" {...register("city", { required: true })} />
                     <Field label="Email" type="email" placeholder="you@example.com" {...register("email", { required: true })} />
                   </div>
