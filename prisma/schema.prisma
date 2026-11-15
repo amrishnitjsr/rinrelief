@@ -1,0 +1,341 @@
+datasource db {
+  provider     = "mongodb"
+  url          = env("MONGODB_DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADVOCATE
+  CLIENT
+}
+
+enum LoanType {
+  CREDIT_CARD
+  PERSONAL_LOAN
+  APP_LOAN_INSTANT
+  BUSINESS_LOAN
+  HOME_OR_AUTO_LOAN
+}
+
+enum LegalMatterType {
+  DEBT_SETTLEMENT
+  BANKING
+  CIVIL_DISPUTE
+  CONSUMER
+  FAMILY
+  CRIMINAL
+  PROPERTY
+  EMPLOYMENT
+  BUSINESS
+  CYBERCRIME
+  OTHER
+}
+
+enum HarassmentType {
+  ABUSIVE_CALLS
+  HOME_OFFICE_VISITS
+  THREATENING_MESSAGES
+  DEFAMATION_CONTACTS_CALLING
+  MULTIPLE_VIOLATIONS
+  NONE
+}
+
+enum CaseStatus {
+  INQUIRY_RECEIVED
+  CONSULTATION_PAID
+  LEGAL_NOTICE_SENT
+  UNDER_NEGOTIATION
+  SETTLEMENT_REACHED
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum DocumentCategory {
+  HARASSMENT_AUDIO
+  SCREENSHOT_CHAT
+  LEGAL_NOTICE_COPY
+  LOAN_STATEMENT
+  SETTLEMENT_LETTER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  CLOSED
+}
+
+enum FeeModel {
+  FLAT
+  MILESTONE
+  INSTALLMENT
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  WAIVED
+}
+
+model User {
+  id                              String        @id @default(cuid()) @map("_id")
+  name                            String
+  email                           String        @unique
+  phone                           String
+  role                            Role          @default(CLIENT)
+  passwordHash                    String?
+  temporaryPasswordCiphertext     String?
+  temporaryPasswordIssuedAt       DateTime?
+  mustChangePassword              Boolean       @default(false)
+  resetTokenHash                  String?
+  resetTokenExpiresAt             DateTime?
+  adminEmailVerificationCodeHash  String?
+  adminEmailVerificationExpiresAt DateTime?
+  adminEmailVerifiedAt            DateTime?
+  passwordChangeCodeHash          String?
+  passwordChangeCodeExpiresAt     DateTime?
+  casesAssigned                   DebtCase[]    @relation("AdvocateCases")
+  createdNotes                    CaseNote[]
+  assignedLeads                   Lead[]        @relation("AssignedLeads")
+  auditEntries                    AuditLog[]    @relation("AuditActor")
+  invoices                        Invoice[]
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @updatedAt
+  queries                         ClientQuery[]
+  feedback                        Feedback[]
+}
+
+model ClientQuery {
+  id        String   @id @default(cuid()) @map("_id")
+  clientId  String
+  client    User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId, createdAt])
+  @@index([status, createdAt])
+}
+
+model DebtCase {
+  id                  String              @id @default(cuid()) @map("_id")
+  caseNumber          String?             @unique
+  clientName          String
+  clientEmail         String
+  clientPhone         String
+  city                String
+  matterType          LegalMatterType     @default(DEBT_SETTLEMENT)
+  matterSummary       String?
+  matterDetails       Json?
+  bankOrLenderName    String?
+  loanType            LoanType?
+  totalOutstanding    Float?
+  principalAmount     Float?
+  overdueDurationDays Int                 @default(0)
+  settlementBudget    Float?
+  facingHarassment    Boolean             @default(false)
+  harassmentType      HarassmentType?
+  harassmentDetails   String?
+  receivedLegalNotice Boolean             @default(false)
+  status              CaseStatus          @default(INQUIRY_RECEIVED)
+  feeAmount           Float               @default(1.0)
+  meetingLink         String?
+  assignedAdvocateId  String?
+  assignedAdvocate    User?               @relation("AdvocateCases", fields: [assignedAdvocateId], references: [id], onDelete: SetNull)
+  evidenceFiles       CaseDocument[]
+  notes               CaseNote[]
+  payment             PaymentTransaction?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  milestones          CaseMilestone[]
+  legalNotices        LegalNotice[]
+  invoices            Invoice[]
+  leads               Lead[]
+
+  @@index([clientPhone])
+  @@index([bankOrLenderName])
+  @@index([status])
+  @@index([assignedAdvocateId, status])
+}
+
+model CaseDocument {
+  id              String           @id @default(cuid()) @map("_id")
+  caseId          String
+  debtCase        DebtCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  category        DocumentCategory
+  fileName        String
+  storageKey      String           @unique
+  fileMimeType    String
+  fileSize        Int
+  title           String?
+  referenceNo     String?
+  isClientVisible Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+
+  @@index([caseId])
+}
+
+model CaseMilestone {
+  id           String    @id @default(cuid()) @map("_id")
+  caseId       String
+  debtCase     DebtCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  stageName    String
+  status       String    @default("PENDING")
+  responseNote String?
+  dueDate      DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([caseId, status])
+}
+
+model LegalNotice {
+  id             String    @id @default(cuid()) @map("_id")
+  caseId         String
+  debtCase       DebtCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  referenceNo    String
+  noticeType     String
+  recipient      String?
+  sentAt         DateTime?
+  trackingNumber String?
+  replyCount     Int       @default(0)
+  fileUrl        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([caseId, referenceNo])
+}
+
+model Invoice {
+  id            String        @id @default(cuid()) @map("_id")
+  clientId      String
+  client        User          @relation(fields: [clientId], references: [id])
+  caseId        String?
+  debtCase      DebtCase?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  feeModel      FeeModel      @default(FLAT)
+  totalFee      Float
+  totalPaid     Float         @default(0)
+  penaltyAmount Float         @default(0)
+  installments  Installment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([clientId, createdAt])
+  @@index([caseId])
+}
+
+model Installment {
+  id         String            @id @default(cuid()) @map("_id")
+  invoiceId  String
+  invoice    Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount     Float
+  percentage Float             @default(0)
+  dueDate    DateTime
+  status     InstallmentStatus @default(PENDING)
+  paidAt     DateTime?
+  receiptUrl String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([invoiceId, dueDate])
+  @@index([status, dueDate])
+}
+
+model Lead {
+  id              String     @id @default(cuid()) @map("_id")
+  referenceNo     String     @unique
+  name            String
+  phone           String
+  email           String
+  city            String
+  state           String?
+  category        String
+  issueSummary    String
+  status          LeadStatus @default(NEW)
+  assignedToId    String?
+  assignedTo      User?      @relation("AssignedLeads", fields: [assignedToId], references: [id], onDelete: SetNull)
+  convertedCaseId String?    @unique
+  convertedCase   DebtCase?  @relation(fields: [convertedCaseId], references: [id], onDelete: SetNull)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([assignedToId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid()) @map("_id")
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model CaseNote {
+  id             String   @id @default(cuid()) @map("_id")
+  caseId         String
+  debtCase       DebtCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User     @relation(fields: [authorId], references: [id])
+  content        String
+  isInternalOnly Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([caseId])
+  @@index([authorId, createdAt])
+}
+
+model PaymentTransaction {
+  id                String        @id @default(cuid()) @map("_id")
+  caseId            String        @unique
+  debtCase          DebtCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  amount            Float
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model Feedback {
+  id        String   @id @default(cuid()) @map("_id")
+  clientId  String?
+  client    User?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  name      String
+  city      String
+  rating    Int
+  message   String
+  approved  Boolean  @default(false)
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([approved, createdAt])
+  @@index([clientId, createdAt])
+}

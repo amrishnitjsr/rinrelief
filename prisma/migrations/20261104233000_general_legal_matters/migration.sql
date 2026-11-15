@@ -1,0 +1,20 @@
+CREATE TYPE "LegalMatterType" AS ENUM (
+  'DEBT_SETTLEMENT',
+  'BANKING',
+  'CIVIL_DISPUTE',
+  'CONSUMER',
+  'FAMILY',
+  'CRIMINAL',
+  'PROPERTY',
+  'EMPLOYMENT',
+  'BUSINESS',
+  'CYBERCRIME',
+  'OTHER'
+);
+
+ALTER TABLE "DebtCase"
+  ADD COLUMN "matterType" "LegalMatterType" NOT NULL DEFAULT 'DEBT_SETTLEMENT',
+  ADD COLUMN "matterSummary" TEXT,
+  ALTER COLUMN "bankOrLenderName" DROP NOT NULL,
+  ALTER COLUMN "loanType" DROP NOT NULL,
+  ALTER COLUMN "totalOutstanding" DROP NOT NULL;

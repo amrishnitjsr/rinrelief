@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Rinrelife logo</title>
+  <rect width="512" height="512" rx="112" fill="#0A192F"/>
+  <path d="M256 82 390 132v112c0 91-56 151-134 186-78-35-134-95-134-186V132L256 82Z" fill="#D4AF37"/>
+  <path d="m177 258 50 50 108-119" fill="none" stroke="#0A192F" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/>
+</svg>

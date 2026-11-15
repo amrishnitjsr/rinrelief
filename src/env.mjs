@@ -1,0 +1,40 @@
+import { z } from "zod";
+
+const schema = z.object({
+  MONGODB_DATABASE_URL: z.string().url(),
+  NEXTAUTH_SECRET: z.string().min(32),
+  NEXTAUTH_URL: z.string().url(),
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_GSC_VERIFICATION: z.string().min(1).optional(),
+  S3_ENDPOINT: z.string().url(),
+  S3_REGION: z.string().min(1),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
+  S3_BUCKET_NAME: z.string().min(1),
+  RESEND_API_KEY: z.string().min(1),
+  RESEND_FROM_EMAIL: z.string().email(),
+  RESEND_FROM_NAME: z.string().min(1).max(120),
+  EMAIL_LOGO_URL: z.string().url().optional(),
+  ADMIN_NOTIFICATION_EMAIL: z.string().email(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+});
+
+export const env = schema.parse({
+  MONGODB_DATABASE_URL: process.env.MONGODB_DATABASE_URL,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_GSC_VERIFICATION: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
+  S3_ENDPOINT: process.env.S3_ENDPOINT,
+  S3_REGION: process.env.S3_REGION,
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+  RESEND_FROM_NAME: process.env.RESEND_FROM_NAME,
+  EMAIL_LOGO_URL: process.env.EMAIL_LOGO_URL,
+  ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL,
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+});

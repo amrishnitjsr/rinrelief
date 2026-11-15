@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 260" width="420" height="260" fill="none">
+  <defs>
+    <style>
+      
+      .hindi-text {
+        font-family: 'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', sans-serif;
+        font-weight: 800;
+        font-size: 38px;
+        fill: #2B251B;
+      }
+      .english-text {
+        font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 40px;
+        letter-spacing: -0.5px;
+        fill: #B08D26;
+      }
+    </style>
+  </defs>
+
+  <!-- Main Charcoal 'R' Structure -->
+  <path d="M 75 30 H 105 V 52 C 122 33 145 26 170 28 C 215 31 245 65 245 108 C 245 145 220 175 185 186 C 212 215 255 226 315 196 C 265 238 205 244 162 210 C 140 192 124 168 105 152 V 225 H 75 V 30 Z M 158 62 C 130 62 108 83 108 110 C 108 137 130 158 158 158 C 186 158 208 137 208 110 C 208 83 186 62 158 62 Z" fill="#2B251B" />
+
+  <!-- Inner Golden Swoosh Curve -->
+  <path d="M 118 82 C 134 55 172 48 198 68 C 224 88 228 130 202 158 C 192 169 178 176 164 179 C 192 204 248 218 315 196 C 258 226 196 222 154 185 C 145 177 138 168 132 160 C 141 163 150 165 160 165 C 192 165 216 140 216 109 C 216 78 191 55 160 55 C 142 55 127 65 118 82 Z" fill="#B08D26" />
+
+  <!-- 'ऋण' inside the circular loop -->
+  <text x="157" y="123" text-anchor="middle" class="hindi-text">ऋण</text>
+
+  <!-- 'Relief' sitting above the extended tail -->
+  <text x="232" y="176" class="english-text">Relief</text>
+</svg>
