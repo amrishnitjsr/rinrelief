@@ -3,12 +3,12 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { BCIDisclaimerModal } from "@/components/compliance/BCIDisclaimerModal";
 import { AuthProvider } from "@/components/auth-provider";
-import { env } from "@/env.mjs";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://rinrelife.com";
 const verificationCode = process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? "YOUR_VERIFICATION_CODE";
+const contactPhone = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -51,7 +51,7 @@ const structuredData = {
       logo: `${siteUrl}/logos/rinrelife dark.svg`,
       description:
         "Confidential legal guidance, debt settlement support, and case preparation across India.",
-      telephone: `+${env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE}`,
+      ...(contactPhone ? { telephone: `+${contactPhone}` } : {}),
       email: "alerts@info.rinrelief.com",
       address: {
         "@type": "PostalAddress",
