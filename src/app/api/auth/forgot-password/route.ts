@@ -7,21 +7,25 @@ import { prisma } from "@/lib/prisma";
 const requestSchema = z.object({ email: z.string().trim().email().max(320) });
 
 export async function POST(request: Request) {
-  const response = NextResponse.json({
-    message: "If an eligible admin account exists for that email, we sent a verification code.",
-  });
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return response;
+    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
   }
   const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) return response;
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+  }
 
   const email = parsed.data.email.toLowerCase();
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true, role: true, adminEmailVerifiedAt: true } });
-  if (!user || !["SUPER_ADMIN", "ADVOCATE"].includes(user.role) || (user.role === "ADVOCATE" && !user.adminEmailVerifiedAt)) return response;
+  if (!user || !["SUPER_ADMIN", "ADVOCATE"].includes(user.role) || (user.role === "ADVOCATE" && !user.adminEmailVerifiedAt)) {
+    return NextResponse.json(
+      { error: "This account is not registered for admin access. Please register first, then try password recovery." },
+      { status: 404 },
+    );
+  }
   const verification = createOtp();
   await prisma.user.update({
     where: { id: user.id },
@@ -40,5 +44,5 @@ export async function POST(request: Request) {
     console.error("password reset email failed", error);
     return NextResponse.json({ error: "We could not send the verification code. Please try again shortly." }, { status: 502 });
   }
-  return response;
+  return NextResponse.json({ message: "Verification code sent. Please check your email inbox and spam folder." });
 }

@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+const required = (name, fallback) => process.env[name] ?? (isProductionBuild ? fallback : undefined);
+
 const schema = z.object({
   MONGODB_DATABASE_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string().min(32),
@@ -22,21 +25,21 @@ const schema = z.object({
 });
 
 export const env = schema.parse({
-  MONGODB_DATABASE_URL: process.env.MONGODB_DATABASE_URL,
-  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  MONGODB_DATABASE_URL: required("MONGODB_DATABASE_URL", "mongodb://build.invalid/rinrelief"),
+  NEXTAUTH_SECRET: required("NEXTAUTH_SECRET", "build-only-secret-that-is-never-used-at-runtime"),
+  NEXTAUTH_URL: required("NEXTAUTH_URL", "http://localhost:3000"),
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_GSC_VERIFICATION: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
-  NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE: process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE,
-  S3_ENDPOINT: process.env.S3_ENDPOINT,
-  S3_REGION: process.env.S3_REGION,
-  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
-  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
-  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-  RESEND_FROM_NAME: process.env.RESEND_FROM_NAME,
+  NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE: required("NEXT_PUBLIC_ADMIN_WHATSAPP_PHONE", "0000000000"),
+  S3_ENDPOINT: required("S3_ENDPOINT", "https://build.invalid"),
+  S3_REGION: required("S3_REGION", "auto"),
+  S3_ACCESS_KEY_ID: required("S3_ACCESS_KEY_ID", "build-only-access-key"),
+  S3_SECRET_ACCESS_KEY: required("S3_SECRET_ACCESS_KEY", "build-only-secret-key"),
+  S3_BUCKET_NAME: required("S3_BUCKET_NAME", "build-only-bucket"),
+  RESEND_API_KEY: required("RESEND_API_KEY", "re_build_only"),
+  RESEND_FROM_EMAIL: required("RESEND_FROM_EMAIL", "build@example.invalid"),
+  RESEND_FROM_NAME: required("RESEND_FROM_NAME", "RinRelief"),
   EMAIL_LOGO_URL: process.env.EMAIL_LOGO_URL,
-  ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL,
+  ADMIN_NOTIFICATION_EMAIL: required("ADMIN_NOTIFICATION_EMAIL", "build@example.invalid"),
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 });

@@ -81,7 +81,7 @@ function ForgotPasswordForm() {
         <Card className="mt-10 p-7 sm:p-9">
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-navy"><Mail size={21} /></div>
           <h1 className="serif mt-4 text-center text-3xl font-bold text-navy">Reset your password</h1>
-          <p className="mt-2 text-center text-sm leading-6 text-slate-500">Admins can reset their password using a secure email OTP.</p>
+          <p className="mt-2 text-center text-sm leading-6 text-slate-500">Admins can reset their password using a secure email OTP. If you have not registered yet, register first.</p>
           <form onSubmit={submit} className="mt-7 space-y-4">
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Email address
               <input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="rounded-xl border border-slate-200 px-3.5 py-3 font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/20" placeholder="you@example.com" />
@@ -101,6 +101,7 @@ function ForgotPasswordForm() {
             {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
             <Button type="submit" loading={loading} loadingText={step === "request" ? "Sending code..." : "Updating password..."} className="w-full">{step === "request" ? "Email me a verification code" : "Set new password"} <ArrowRight size={16} /></Button>
           </form>
+          {step === "request" && <Link href="/register" className="mt-4 flex items-center justify-center text-sm font-bold text-gold">Register first</Link>}
           <Link href={loginHref} className="mt-6 flex items-center justify-center gap-2 text-sm font-bold text-navy"><ArrowLeft size={15} /> Back to {isAdmin ? "admin" : "client"} sign in</Link>
         </Card>
       </div>
